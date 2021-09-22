@@ -1,0 +1,13 @@
+FROM node:12-alpine3.12
+
+RUN apk add git
+WORKDIR /app
+
+ENV NODE_ENV mainnet
+
+RUN mkdir -p /root/.aws /app/keys /app/encrypted
+
+COPY . /app/
+RUN yarn && yarn build
+
+CMD node ./dist/server.js

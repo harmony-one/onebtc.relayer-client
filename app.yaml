@@ -1,0 +1,4 @@
+runtime: nodejs
+env: flexible
+automatic_scaling:
+  max_num_instances: 1
