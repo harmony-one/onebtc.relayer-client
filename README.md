@@ -40,10 +40,11 @@ npm run build
 npm run start:prod
 ```
 
-* How to get all operations list 
+* How to get all info 
 
 ```
-curl --location --request GET 'http://localhost:8080/busd/operations'
+curl --location --request GET 'http://localhost:8080/height'
+curl --location --request GET 'http://localhost:8080/info'
 ```
 
 # Docker
