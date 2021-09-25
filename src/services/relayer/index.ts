@@ -1,6 +1,6 @@
 import Web3 from 'web3';
 import { DBService } from '../database';
-import { abi } from './contracts/Relay';
+import { abi } from '../../abi/Relay';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
 import { getBlockByHeight, getHeight, sleep } from './btc-rpc';
@@ -61,7 +61,7 @@ export class RelayerService {
 
         await this.relayContract.methods.submitBlockHeader('0x' + block.toHex(true)).send({
           from: this.ethMasterAccount,
-          gas: process.env.GAS_LIMIT,
+          gas: process.env.HMY_GAS_LIMIT,
           gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
         });
 
