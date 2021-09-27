@@ -32,16 +32,18 @@ export class RelayerService {
 
     this.web3 = new Web3(process.env.HMY_NODE_URL);
 
-    let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-      process.env.ETH_MASTER_PRIVATE_KEY
-    );
+    if(process.env.ETH_MASTER_PRIVATE_KEY) {
+      let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
+        process.env.ETH_MASTER_PRIVATE_KEY
+      );
 
-    this.web3.eth.accounts.wallet.add(ethMasterAccount);
-    this.web3.eth.defaultAccount = ethMasterAccount.address;
-    this.ethMasterAccount = ethMasterAccount.address;
+      this.web3.eth.accounts.wallet.add(ethMasterAccount);
+      this.web3.eth.defaultAccount = ethMasterAccount.address;
+      this.ethMasterAccount = ethMasterAccount.address;
 
-    this.relayContractAddress = params.relayContractAddress;
-    this.relayContract = new this.web3.eth.Contract(abi as AbiItem[], params.relayContractAddress);
+      this.relayContractAddress = params.relayContractAddress;
+      this.relayContract = new this.web3.eth.Contract(abi as AbiItem[], params.relayContractAddress);
+    }
   }
 
   async start() {
