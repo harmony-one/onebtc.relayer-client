@@ -51,4 +51,21 @@ export const routes = (app, services: IServices) => {
       return res.json(data);
     })
   );
+
+  app.get(
+    '/vaults/info',
+    asyncHandler(async (req, res) => {
+      const data = await services.vaults.getInfo();
+      return res.json(data);
+    })
+  );
+
+  app.get(
+    '/vaults/data',
+    asyncHandler(async (req, res) => {
+      const { size = 50, page = 0 } = req.query;
+      const data = await services.vaults.getAllData({ size, page });
+      return res.json(data);
+    })
+  );
 };

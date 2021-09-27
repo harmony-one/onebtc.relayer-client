@@ -31,8 +31,12 @@ export class RelayerService {
     this.dbCollectionName = params.dbCollectionName;
 
     this.web3 = new Web3(process.env.HMY_NODE_URL);
+    
+    this.relayContractAddress = params.relayContractAddress;
+  }
 
-    if(process.env.ETH_MASTER_PRIVATE_KEY) {
+  async start() {
+    try {
       let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
         process.env.ETH_MASTER_PRIVATE_KEY
       );
@@ -41,18 +45,17 @@ export class RelayerService {
       this.web3.eth.defaultAccount = ethMasterAccount.address;
       this.ethMasterAccount = ethMasterAccount.address;
 
-      this.relayContractAddress = params.relayContractAddress;
-      this.relayContract = new this.web3.eth.Contract(abi as AbiItem[], params.relayContractAddress);
+      this.relayContract = new this.web3.eth.Contract(abi as AbiItem[], this.relayContractAddress);
+
+      const res = await this.relayContract.methods.getBestBlock().call();
+      this.btcLastBlock = Number(res.height);
+
+      log.info(`Start Relayer Service - ok`, { height: this.btcLastBlock });
+
+      setTimeout(this.syncBlockHeader, 100);
+    } catch (e) {
+      log.error('Error start Relayer Service', { error: e });
     }
-  }
-
-  async start() {
-    const res = await this.relayContract.methods.getBestBlock().call();
-    this.btcLastBlock = Number(res.height);
-
-    log.info('Started', { height: this.btcLastBlock });
-
-    setTimeout(this.syncBlockHeader, 100);
   }
 
   syncBlockHeader = async () => {

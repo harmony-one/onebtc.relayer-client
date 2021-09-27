@@ -49,6 +49,26 @@ export class DBService {
     return await collection.insertMany(data, { ordered: true });
   };
 
+  public updateMany = async (collectionName: string, data: any[]) => {
+    let collection = this.db.collection(collectionName);
+
+    if (!collection) {
+      collection = await this.db.createCollection(collectionName);
+    }
+
+    return await collection.updateMany(data, { ordered: true });
+  };
+
+  public update = async (collectionName: string, idKey: string, idValue: string, data: any) => {
+    let collection = this.db.collection(collectionName);
+
+    if (!collection) {
+      collection = await this.db.createCollection(collectionName);
+    }
+
+    return await collection.updateOne({ [idKey]: idValue }, { $set: data }, { upsert: true });
+  };
+
   public getCollectionCount = async (collectionName: string) => {
     try {
       let collection = this.db.collection(collectionName);
