@@ -85,13 +85,14 @@ export class DBService {
     collectionName: string,
     orderBy?: string,
     limit = 100,
-    skip = 0
+    skip = 0,
+    filter: Record<string, any> = null
   ): Promise<any> => {
     try {
       let collection = this.db.collection(collectionName);
 
       return await collection
-        .find()
+        .find(filter)
         .sort({ [orderBy]: 1 })
         .limit(limit)
         .skip(skip)

@@ -3,7 +3,7 @@ import { DBService } from '../database';
 
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import {IRegisterVault} from "../interfaces";
+import { IRegisterVault } from '../interfaces';
 
 import logger from '../../logger';
 const log = logger.module('Vaults:main');
@@ -147,7 +147,7 @@ export class VaultsService {
     return await this.database.getCollectionData(collectionName, 'lastUpdate', Number(total), 0);
   };
 
-  getAllData = async (params: { search?: string; size: number; page: number }) => {
+  getAllData = async (params: { id?: string; size: number; page: number }) => {
     const collectionName = `${this.dbCollectionPrefix}_data`;
 
     const from = params.page * params.size;
@@ -158,7 +158,8 @@ export class VaultsService {
       collectionName,
       'blockNumber',
       Number(params.size),
-      from
+      from,
+      params.id ? { vaultId: params.id } : null
     );
 
     return {

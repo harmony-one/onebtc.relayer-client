@@ -63,9 +63,17 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/vaults/data',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0 } = req.query;
-      const data = await services.vaults.getAllData({ size, page });
+      const { size = 50, page = 0, id } = req.query;
+      const data = await services.vaults.getAllData({ size, page, id });
       return res.json(data);
+    })
+  );
+
+  app.get(
+    '/vaults/data/:id',
+    asyncHandler(async (req, res) => {
+      const data = await services.vaults.getAllData({ size: 1, page: 0, id: req.params.id });
+      return res.json(data.content[0]);
     })
   );
 };
