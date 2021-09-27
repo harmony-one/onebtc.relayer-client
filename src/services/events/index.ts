@@ -2,6 +2,7 @@ import Web3 from 'web3';
 import { AbiItem } from 'web3-utils/types';
 import { DBService } from '../database';
 import { getContractDeploymentBlock, getEventsAbi, getHmyLogs } from './api';
+import EventEmitter = require("events");
 
 import logger from '../../logger';
 const log = logger.module('logEvents:main');
@@ -9,8 +10,9 @@ const log = logger.module('logEvents:main');
 export interface ILogEventsService {
   database: DBService;
   contractAddress: string;
-  contractAbi: any;
+  contractAbi: any[];
   dbCollectionPrefix: string;
+  eventEmitter: EventEmitter;
 }
 
 const sleep = ms => new Promise(res => setTimeout(res, ms));
@@ -33,12 +35,12 @@ export class LogEvents {
   cacheLimit = Number(process.env.CACHE_LIMIT) || 10000;
 
   abiEvents: Record<string, AbiItem>;
-  contractAbiEvents: AbiItem[];
+  contractAbiEvents: any[];
   eventLogs = [];
   eventName = '';
+  eventEmitter: EventEmitter;
 
   web3: Web3;
-  contract;
 
   nodeURL = process.env.HMY_NODE_URL || 'https://api.s0.b.hmny.io';
 
@@ -52,6 +54,7 @@ export class LogEvents {
     // this.lastBlock = params.lastBlock;
     // this.eventLogs = params.eventLogs;
     this.abiEvents = getEventsAbi(this.web3, params.contractAbi);
+    this.eventEmitter = params.eventEmitter;
   }
 
   async start() {
@@ -60,9 +63,11 @@ export class LogEvents {
       this.startBlock = this.lastBlock;
 
       setTimeout(this.readEvents, 100);
+
+      log.info(`Start Event Service ${this.dbCollectionPrefix} - ok`);
     } catch (e) {
-      log.error(`Start ${this.eventName}`, { error: e });
-      throw new Error(`start ${this.eventName}: ${e.message}`);
+      log.error(`Start ${this.dbCollectionPrefix}`, { error: e });
+      throw new Error(`start ${this.dbCollectionPrefix}: ${e.message}`);
     }
   }
 
@@ -108,10 +113,15 @@ export class LogEvents {
         }
 
         if (events.length) {
+          // save events to DB
           await this.database.insertMany(`${this.dbCollectionPrefix}_data`, events);
+
+          // send events to other services via eventsEmitter
+          events.forEach(event => this.eventEmitter.emit(event.name, event));
         }
 
-        // this.eventLogs = this.eventLogs.concat(events);
+        // cache - disabled
+        this.events = this.eventLogs.concat(events);
 
         this.lastBlock = to;
         this.lastSuccessfulRead = Date.now();

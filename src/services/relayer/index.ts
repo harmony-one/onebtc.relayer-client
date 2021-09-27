@@ -31,26 +31,30 @@ export class RelayerService {
     this.dbCollectionName = params.dbCollectionName;
 
     this.web3 = new Web3(process.env.HMY_NODE_URL);
-
-    let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-      process.env.ETH_MASTER_PRIVATE_KEY
-    );
-
-    this.web3.eth.accounts.wallet.add(ethMasterAccount);
-    this.web3.eth.defaultAccount = ethMasterAccount.address;
-    this.ethMasterAccount = ethMasterAccount.address;
-
     this.relayContractAddress = params.relayContractAddress;
-    this.relayContract = new this.web3.eth.Contract(abi as AbiItem[], params.relayContractAddress);
   }
 
   async start() {
-    const res = await this.relayContract.methods.getBestBlock().call();
-    this.btcLastBlock = Number(res.height);
+    try {
+      let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
+        process.env.ETH_MASTER_PRIVATE_KEY
+      );
 
-    log.info('Started', { height: this.btcLastBlock });
+      this.web3.eth.accounts.wallet.add(ethMasterAccount);
+      this.web3.eth.defaultAccount = ethMasterAccount.address;
+      this.ethMasterAccount = ethMasterAccount.address;
 
-    setTimeout(this.syncBlockHeader, 100);
+      this.relayContract = new this.web3.eth.Contract(abi as AbiItem[], this.relayContractAddress);
+
+      const res = await this.relayContract.methods.getBestBlock().call();
+      this.btcLastBlock = Number(res.height);
+
+      log.info(`Start Relayer Service - ok`, { height: this.btcLastBlock });
+
+      setTimeout(this.syncBlockHeader, 100);
+    } catch (e) {
+      log.error('Error start Relayer Service', { error: e });
+    }
   }
 
   syncBlockHeader = async () => {
