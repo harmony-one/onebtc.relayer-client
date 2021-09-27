@@ -31,6 +31,7 @@ export class RelayerService {
     this.dbCollectionName = params.dbCollectionName;
 
     this.web3 = new Web3(process.env.HMY_NODE_URL);
+    
     this.relayContractAddress = params.relayContractAddress;
   }
 
