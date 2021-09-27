@@ -49,24 +49,14 @@ export class DBService {
     return await collection.insertMany(data, { ordered: true });
   };
 
-  public updateMany = async (collectionName: string, data: any[]) => {
+  public update = async (collectionName: string, filter: Record<string, any>, data: any) => {
     let collection = this.db.collection(collectionName);
 
     if (!collection) {
       collection = await this.db.createCollection(collectionName);
     }
 
-    return await collection.updateMany(data, { ordered: true });
-  };
-
-  public update = async (collectionName: string, idKey: string, idValue: string, data: any) => {
-    let collection = this.db.collection(collectionName);
-
-    if (!collection) {
-      collection = await this.db.createCollection(collectionName);
-    }
-
-    return await collection.updateOne({ [idKey]: idValue }, { $set: data }, { upsert: true });
+    return await collection.updateOne(filter, { $set: data }, { upsert: true });
   };
 
   public getCollectionCount = async (collectionName: string) => {
@@ -79,6 +69,16 @@ export class DBService {
 
       return 0;
     }
+  };
+
+  public find = async (collectionName: string, filter: Record<string, any>) => {
+    let collection = this.db.collection(collectionName);
+
+    if (!collection) {
+      return null;
+    }
+
+    return await collection.findOne(filter);
   };
 
   public getCollectionData = async (

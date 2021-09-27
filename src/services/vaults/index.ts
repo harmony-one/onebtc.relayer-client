@@ -1,9 +1,9 @@
 import EventEmitter = require('events');
 import { DBService } from '../database';
 
-import { IRegisterVault } from './events';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
+import {IRegisterVault} from "../interfaces";
 
 import logger from '../../logger';
 const log = logger.module('Vaults:main');
@@ -75,10 +75,14 @@ export class VaultsService {
   }
 
   updateOrCreateVault = async (data: IVaultRegistry) => {
-    await this.database.update(`${this.dbCollectionPrefix}_data`, 'vaultId', data.vaultId, {
-      ...data,
-      lastUpdate: Date.now(),
-    });
+    await this.database.update(
+      `${this.dbCollectionPrefix}_data`,
+      { vaultId: data.vaultId },
+      {
+        ...data,
+        lastUpdate: Date.now(),
+      }
+    );
   };
 
   addVault = async (data: IRegisterVault) => {

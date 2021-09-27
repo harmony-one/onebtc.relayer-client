@@ -2,7 +2,8 @@ import Web3 from 'web3';
 import { AbiItem } from 'web3-utils/types';
 import { DBService } from '../database';
 import { getContractDeploymentBlock, getEventsAbi, getHmyLogs } from './api';
-import EventEmitter = require("events");
+import EventEmitter = require('events');
+import { IEvent } from '../interfaces';
 
 import logger from '../../logger';
 const log = logger.module('logEvents:main');
@@ -71,6 +72,21 @@ export class LogEvents {
     }
   }
 
+  addIfNotFoundMany = async (events: IEvent[]) => {
+    for (let i = 0; i < events.length; i++) {
+      const collectionName = `${this.dbCollectionPrefix}_data`;
+
+      const dbEvent = await this.database.find(collectionName, {
+        transactionHash: events[i].transactionHash,
+        data: events[i].data,
+      });
+
+      if (!dbEvent) {
+        await this.database.insert(collectionName, events[i]);
+      }
+    }
+  };
+
   readEvents = async () => {
     try {
       this.lastNodeBlock = await this.web3.eth.getBlockNumber();
@@ -114,7 +130,7 @@ export class LogEvents {
 
         if (events.length) {
           // save events to DB
-          await this.database.insertMany(`${this.dbCollectionPrefix}_data`, events);
+          await this.addIfNotFoundMany(events);
 
           // send events to other services via eventsEmitter
           events.forEach(event => this.eventEmitter.emit(event.name, event));

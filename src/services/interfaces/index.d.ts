@@ -18,23 +18,23 @@ event ReplaceTokens(address indexed oldVaultId, address indexed newVaultId, uint
 */
 
 export interface IEvent {
-  address: string;
-  topics: string[];
-  data: string;
-  blockNumber: number;
-  transactionHash: string;
-  transactionIndex: string;
-  blockHash: string;
-  logIndex: string;
-  removed: boolean;
-  name: string;
+    address: string;
+    topics: string[];
+    data: string;
+    blockNumber: number;
+    transactionHash: string;
+    transactionIndex: string;
+    blockHash: string;
+    logIndex: string;
+    removed: boolean;
+    name: string;
 }
 
 export interface IRegisterVault extends IEvent {
-  returnValues: {
-    vaultId: string;
-    collateral: string;
-    btcPublicKeyX: string;
-    btcPublicKeyY: string;
-  };
+    returnValues: {
+        vaultId: string;
+        collateral: string;
+        btcPublicKeyX: string;
+        btcPublicKeyY: string;
+    };
 }
