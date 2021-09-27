@@ -11,7 +11,7 @@ export const getContractDeploymentBlock = async (address): Promise<number> => {
       `${process.env.HMY_EXPLORER_API}/shard/0/address/${address.toLowerCase()}/contract`
     );
 
-    return contract.data.blockNumber;
+    return Number(contract.data.blockNumber);
   } catch (e) {
     log.error('Error fetch contract creationDate', { error: e });
     throw new Error(`Contract not found ${address}`);
@@ -22,7 +22,7 @@ interface IParams {
   fromBlock: string;
   toBlock: string;
   address: string;
-  topics: string[];
+  topics?: string[];
 }
 
 export const getHmyLogs = async (params: IParams) => {
@@ -74,4 +74,28 @@ export const getHmyTransactionByHash = async (hash: string) => {
   }
 
   return res.data.result;
+};
+
+export const getEventsAbi = (web3: Web3, abi: AbiItem[]) => {
+  const extAbi = abi
+    .filter(a => a.type === 'event')
+    .map(abiItem => ({
+      ...abiItem,
+      signature: web3.eth.abi.encodeEventSignature(abiItem).toLowerCase(),
+    }));
+
+  const res = {};
+
+  extAbi.forEach(abiItem => (res[abiItem.signature] = abiItem));
+
+  return res;
+};
+
+export const getEventsAbiArray = (web3: Web3, abi: AbiItem[]) => {
+  return abi
+    .filter(a => a.type === 'event')
+    .map(abiItem => ({
+      ...abiItem,
+      signature: web3.eth.abi.encodeEventSignature(abiItem).toLowerCase(),
+    }));
 };
