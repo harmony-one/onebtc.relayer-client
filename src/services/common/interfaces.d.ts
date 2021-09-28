@@ -30,11 +30,49 @@ export interface IEvent {
   name: string;
 }
 
-export interface IRegisterVault extends IEvent {
+export interface IRegisterVaultEvent extends IEvent {
   returnValues: {
     vaultId: string;
     collateral: string;
     btcPublicKeyX: string;
     btcPublicKeyY: string;
+  };
+}
+
+export interface IVaultRegistry {
+  id: string;
+  vaultId: string;
+  btcPublicKeyX: string;
+  btcPublicKeyY: string;
+  collateral: string;
+  issued: string;
+  toBeIssued: string;
+  toBeRedeemed: string;
+  replaceCollateral: string;
+  toBeReplaced: string;
+}
+
+export interface IssueRequest {
+  vault: string;
+  opentime: string;
+  requester: string;
+  btcAddress: string;
+  btcPublicKey: string;
+  amount: string;
+  fee: string;
+  griefingCollateral: string;
+  period: string;
+  btcHeight: string;
+  status: string;
+}
+
+export interface IssueRequestEvent extends IEvent {
+  returnValues: {
+    issueId: string;
+    requester: string;
+    vaultId: string;
+    amount: string;
+    fee: string;
+    btcAddress: string;
   };
 }
