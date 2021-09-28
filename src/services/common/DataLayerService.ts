@@ -60,7 +60,12 @@ export class DataLayerService<T> {
     const collectionName = `${this.dbCollectionPrefix}_data`;
     const total = await this.database.getCollectionCount(collectionName);
 
-    return await this.database.getCollectionData(collectionName, 'lastUpdate', Number(total), 0);
+    return await this.database.getCollectionData(
+      collectionName,
+      { ['lastUpdate']: -1 },
+      Number(total),
+      0
+    );
   };
 
   getData = async (params: {
@@ -68,7 +73,7 @@ export class DataLayerService<T> {
     size: number;
     page: number;
     filter?: Record<string, any>;
-    orderBy?: string;
+    sort?: Record<string, any>;
   }) => {
     const collectionName = `${this.dbCollectionPrefix}_data`;
 
@@ -78,7 +83,7 @@ export class DataLayerService<T> {
 
     const data = await this.database.getCollectionData(
       collectionName,
-      'blockNumber',
+      params.sort,
       Number(params.size),
       from,
       params.id ? { id: params.id } : params.filter

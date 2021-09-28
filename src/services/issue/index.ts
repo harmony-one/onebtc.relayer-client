@@ -33,7 +33,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
         size: 1000,
         page: 0,
         filter: { status: '1' },
-        orderBy: 'opentime',
+        sort: { opentime: -1 }
       });
 
       data.content.forEach(item => this.observableData.set(item.id, item));

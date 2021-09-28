@@ -173,7 +173,12 @@ export class LogEvents {
     };
   };
 
-  getAllEvents = async (params: { search?: string; size: number; page: number }) => {
+  getAllEvents = async (params: {
+    search?: string;
+    size: number;
+    page: number;
+    sort?: Record<string, any>;
+  }) => {
     const collectionName = `${this.dbCollectionPrefix}_data`;
 
     const from = params.page * params.size;
@@ -182,7 +187,7 @@ export class LogEvents {
 
     const data = await this.database.getCollectionData(
       collectionName,
-      'blockNumber',
+      params.sort,
       Number(params.size),
       from
     );

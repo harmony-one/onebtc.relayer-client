@@ -30,7 +30,7 @@ export const routes = (app, services: IServices) => {
     '/relay/events/data',
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0 } = req.query;
-      const data = await services.relayEvents.getAllEvents({ size, page });
+      const data = await services.relayEvents.getAllEvents({ size, page, sort: { blockNumber: -1 } });
       return res.json(data);
     })
   );
@@ -47,7 +47,7 @@ export const routes = (app, services: IServices) => {
     '/main-events/data',
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0 } = req.query;
-      const data = await services.onebtcEvents.getAllEvents({ size, page });
+      const data = await services.onebtcEvents.getAllEvents({ size, page, sort: { blockNumber: -1 } });
       return res.json(data);
     })
   );
@@ -64,7 +64,7 @@ export const routes = (app, services: IServices) => {
     '/vaults/data',
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0, id } = req.query;
-      const data = await services.vaults.getData({ size, page, id });
+      const data = await services.vaults.getData({ size, page, id, sort: { opentime: -1 } });
       return res.json(data);
     })
   );
@@ -89,7 +89,7 @@ export const routes = (app, services: IServices) => {
     '/issues/data',
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0, id } = req.query;
-      const data = await services.issues.getData({ size, page, id });
+      const data = await services.issues.getData({ size, page, id, sort: { opentime: -1 } });
       return res.json(data);
     })
   );
@@ -114,7 +114,7 @@ export const routes = (app, services: IServices) => {
     '/redeems/data',
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0, id } = req.query;
-      const data = await services.redeems.getData({ size, page, id });
+      const data = await services.redeems.getData({ size, page, id, sort: { opentime: -1 } });
       return res.json(data);
     })
   );
