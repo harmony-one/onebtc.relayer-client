@@ -83,7 +83,7 @@ export class DBService {
 
   public getCollectionData = async (
     collectionName: string,
-    orderBy?: string,
+    sort: Record<string, any> = null,
     limit = 100,
     skip = 0,
     filter: Record<string, any> = null
@@ -91,12 +91,7 @@ export class DBService {
     try {
       let collection = this.db.collection(collectionName);
 
-      return await collection
-        .find(filter)
-        .sort({ [orderBy]: 1 })
-        .limit(limit)
-        .skip(skip)
-        .toArray();
+      return await collection.find(filter).sort(sort).limit(limit).skip(skip).toArray();
     } catch (e) {
       log.error('Error getCollectionData', { error: e });
 

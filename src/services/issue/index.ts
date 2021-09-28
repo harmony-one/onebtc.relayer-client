@@ -33,7 +33,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
         size: 1000,
         page: 0,
         filter: { status: '1' },
-        orderBy: 'opentime',
+        sort: { opentime: -1 }
       });
 
       data.content.forEach(item => this.observableData.set(item.id, item));
@@ -52,6 +52,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
       const { requester } = data.returnValues;
       const id = data.returnValues[this.idEventKey];
 
+      // TODO: if next string fail - issue will lost
       const issueInfo = await this.contract.methods.issueRequests(requester, id).call();
       const issue = { ...issueInfo, id };
 
@@ -67,6 +68,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
   syncData = async () => {
     try {
+      // TODO: next requests not parallel - need to optimise fro 20+ items
       for (let item of this.observableData.values()) {
         try {
           const { requester, id } = item;

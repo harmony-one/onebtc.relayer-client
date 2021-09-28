@@ -43,6 +43,7 @@ export class VaultsService extends DataLayerService<IVaultRegistry> {
     try {
       const vaultId = data.returnValues.vaultId;
 
+      // TODO: if next string fail - vault will lost
       const vaultInfo = await this.contract.methods.vaults(vaultId).call();
       const vault = { ...vaultInfo, id: vaultId };
 
@@ -56,6 +57,7 @@ export class VaultsService extends DataLayerService<IVaultRegistry> {
 
   syncVaults = async () => {
     try {
+      // TODO: next requests not parallel - need to optimise fro 20+ items
       for (let vaultId of this.observableData.keys()) {
         try {
           const vaultInfo = await this.contract.methods.vaults(vaultId).call();
