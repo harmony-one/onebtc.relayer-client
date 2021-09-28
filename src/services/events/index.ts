@@ -3,7 +3,7 @@ import { AbiItem } from 'web3-utils/types';
 import { DBService } from '../database';
 import { getContractDeploymentBlock, getEventsAbi, getHmyLogs } from './api';
 import EventEmitter = require('events');
-import { IEvent } from '../interfaces';
+import { IEvent } from '../common/interfaces';
 
 import logger from '../../logger';
 const log = logger.module('logEvents:main');
@@ -152,14 +152,6 @@ export class LogEvents {
 
     setTimeout(this.readEvents, this.waitInterval);
   };
-
-  // restoreOperationsFromDB = async () => {
-  //   this.registrations = await this.database.getCollectionDataWithLimit(
-  //     this.dbCollectionName,
-  //     'timestamp',
-  //     this.cacheLimit
-  //   );
-  // };
 
   getProgress = () =>
     ((this.lastBlock - this.startBlock) / (this.lastNodeBlock - this.startBlock)).toFixed(2);

@@ -64,7 +64,7 @@ export const routes = (app, services: IServices) => {
     '/vaults/data',
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0, id } = req.query;
-      const data = await services.vaults.getAllData({ size, page, id });
+      const data = await services.vaults.getData({ size, page, id });
       return res.json(data);
     })
   );
@@ -72,8 +72,58 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/vaults/data/:id',
     asyncHandler(async (req, res) => {
-      const data = await services.vaults.getAllData({ size: 1, page: 0, id: req.params.id });
-      return res.json(data.content[0]);
+      const data = await services.vaults.find(req.params.id);
+      return res.json(data);
+    })
+  );
+
+  app.get(
+    '/issues/info',
+    asyncHandler(async (req, res) => {
+      const data = await services.issues.getInfo();
+      return res.json(data);
+    })
+  );
+
+  app.get(
+    '/issues/data',
+    asyncHandler(async (req, res) => {
+      const { size = 50, page = 0, id } = req.query;
+      const data = await services.issues.getData({ size, page, id });
+      return res.json(data);
+    })
+  );
+
+  app.get(
+    '/issues/data/:id',
+    asyncHandler(async (req, res) => {
+      const data = await services.issues.find(req.params.id);
+      return res.json(data);
+    })
+  );
+
+  app.get(
+    '/redeems/info',
+    asyncHandler(async (req, res) => {
+      const data = await services.redeems.getInfo();
+      return res.json(data);
+    })
+  );
+
+  app.get(
+    '/redeems/data',
+    asyncHandler(async (req, res) => {
+      const { size = 50, page = 0, id } = req.query;
+      const data = await services.redeems.getData({ size, page, id });
+      return res.json(data);
+    })
+  );
+
+  app.get(
+    '/redeems/data/:id',
+    asyncHandler(async (req, res) => {
+      const data = await services.redeems.find(req.params.id);
+      return res.json(data);
     })
   );
 };
