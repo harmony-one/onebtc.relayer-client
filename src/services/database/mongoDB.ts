@@ -80,7 +80,7 @@ export class DBService {
   };
 
   public find = async (collectionName: string, filter: Record<string, any>) => {
-    if(!this.isInit) null;
+    if(!this.isInit) return null;
 
     let collection = this.db.collection(collectionName);
 
