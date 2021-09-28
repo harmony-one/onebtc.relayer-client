@@ -30,6 +30,8 @@ export class DBService {
   };
 
   public insert = async (collectionName: string, data) => {
+    if(!this.isInit) return;
+
     let collection = this.db.collection(collectionName);
 
     if (!collection) {
@@ -40,6 +42,8 @@ export class DBService {
   };
 
   public insertMany = async (collectionName: string, data: any[]) => {
+    if(!this.isInit) return;
+
     let collection = this.db.collection(collectionName);
 
     if (!collection) {
@@ -50,6 +54,8 @@ export class DBService {
   };
 
   public update = async (collectionName: string, filter: Record<string, any>, data: any) => {
+    if(!this.isInit) return;
+
     let collection = this.db.collection(collectionName);
 
     if (!collection) {
@@ -60,6 +66,8 @@ export class DBService {
   };
 
   public getCollectionCount = async (collectionName: string) => {
+    if(!this.isInit) return 0;
+
     try {
       let collection = this.db.collection(collectionName);
 
@@ -72,6 +80,8 @@ export class DBService {
   };
 
   public find = async (collectionName: string, filter: Record<string, any>) => {
+    if(!this.isInit) null;
+
     let collection = this.db.collection(collectionName);
 
     if (!collection) {
@@ -88,6 +98,8 @@ export class DBService {
     skip = 0,
     filter: Record<string, any> = null
   ): Promise<any> => {
+    if(!this.isInit) return [];
+
     try {
       let collection = this.db.collection(collectionName);
 
