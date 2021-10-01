@@ -47,6 +47,7 @@ export const InitServices = async (): Promise<IServices> => {
     contractAbi: oneBtcAbi,
     eventEmitter,
     eventName: 'IssueRequest',
+    methodName: 'issueRequests',
     idEventKey: 'issueId',
   });
 
@@ -59,6 +60,7 @@ export const InitServices = async (): Promise<IServices> => {
     contractAbi: oneBtcAbi,
     eventEmitter,
     eventName: 'RedeemRequest',
+    methodName: 'redeemRequests',
     idEventKey: 'redeemId',
   });
 

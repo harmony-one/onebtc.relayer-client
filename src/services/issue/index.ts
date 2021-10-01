@@ -8,6 +8,7 @@ const log = logger.module('Issues:main');
 export interface IIssueService extends ILogEventsService {
   eventEmitter: EventEmitter;
   eventName: string;
+  methodName: string;
   idEventKey: string;
 }
 
@@ -15,6 +16,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
   eventEmitter: EventEmitter;
   waitInterval = Number(process.env.WAIT_INTERVAL) || 1000;
   eventName: string;
+  methodName: string;
   idEventKey: string;
 
   constructor(params: IIssueService) {
@@ -23,6 +25,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
     this.eventEmitter = params.eventEmitter;
 
     this.eventName = params.eventName;
+    this.methodName = params.methodName;
     this.idEventKey = params.idEventKey;
     this.eventEmitter.on(params.eventName, this.addIssue);
   }
@@ -53,7 +56,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
       const id = data.returnValues[this.idEventKey];
 
       // TODO: if next string fail - issue will lost
-      const issueInfo = await this.contract.methods.issueRequests(requester, id).call();
+      const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
       const issue = { ...issueInfo, id };
 
       await this.updateOrCreateData(issue);
@@ -73,7 +76,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
         try {
           const { requester, id } = item;
 
-          const issueInfo = await this.contract.methods.issueRequests(requester, id).call();
+          const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
           const issueUpd = { ...issueInfo, id };
 
           await this.updateOrCreateData(issueUpd);
