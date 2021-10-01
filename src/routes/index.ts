@@ -30,7 +30,11 @@ export const routes = (app, services: IServices) => {
     '/relay/events/data',
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0 } = req.query;
-      const data = await services.relayEvents.getAllEvents({ size, page, sort: { blockNumber: -1 } });
+      const data = await services.relayEvents.getAllEvents({
+        size,
+        page,
+        sort: { blockNumber: -1 },
+      });
       return res.json(data);
     })
   );
@@ -47,7 +51,11 @@ export const routes = (app, services: IServices) => {
     '/main-events/data',
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0 } = req.query;
-      const data = await services.onebtcEvents.getAllEvents({ size, page, sort: { blockNumber: -1 } });
+      const data = await services.onebtcEvents.getAllEvents({
+        size,
+        page,
+        sort: { blockNumber: -1 },
+      });
       return res.json(data);
     })
   );
@@ -124,6 +132,27 @@ export const routes = (app, services: IServices) => {
     asyncHandler(async (req, res) => {
       const data = await services.redeems.find(req.params.id);
       return res.json(data);
+    })
+  );
+
+  app.get(
+    '/monitor',
+    asyncHandler(async (req, res) => {
+      const relayer = await services.relayer.getInfo();
+      const relayEvents = await services.relayEvents.getInfo();
+      const mainEvents = await services.onebtcEvents.getInfo();
+      const issues = await services.issues.getInfo();
+      const redeems = await services.redeems.getInfo();
+      const vaults = await services.vaults.getInfo();
+
+      return res.json({
+        relayer,
+        relayEvents,
+        mainEvents,
+        issues,
+        redeems,
+        vaults,
+      });
     })
   );
 };
