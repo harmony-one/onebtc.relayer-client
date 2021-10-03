@@ -1,11 +1,9 @@
 import EventEmitter from 'events';
 import { databaseService, DBService } from './database';
-import { LogEvents } from './events';
-import { VaultsService } from './vaults';
-import { RelayerService } from './relayer';
+import { LogEvents, IssueService, VaultsService } from './Dashboard';
+import { RelayerService } from './Relayer';
 import { abi as oneBtcAbi } from '../abi/OneBtc';
 import { abi as relayAbi } from '../abi/Relay';
-import { IssueService } from './issue';
 
 export interface IServices {
   relayer: RelayerService;

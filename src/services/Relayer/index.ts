@@ -15,6 +15,12 @@ export interface IRelayerService {
   relayContractAddress: string;
 }
 
+enum RELAYER_STATUS {
+  STOPPED = 'STOPPED',
+  LAUNCHED = 'LAUNCHED',
+  PAUSED = 'PAUSED',
+}
+
 export class RelayerService {
   database: DBService;
   dbCollectionName = 'headers';
@@ -26,12 +32,15 @@ export class RelayerService {
 
   btcLastBlock: number;
 
+  status = RELAYER_STATUS.STOPPED;
+  lastError = '';
+
   constructor(params: IRelayerService) {
     this.database = params.database;
     this.dbCollectionName = params.dbCollectionName;
 
     this.web3 = new Web3(process.env.HMY_NODE_URL);
-    
+
     this.relayContractAddress = params.relayContractAddress;
   }
 
@@ -52,9 +61,12 @@ export class RelayerService {
 
       log.info(`Start Relayer Service - ok`, { height: this.btcLastBlock });
 
+      this.status = RELAYER_STATUS.LAUNCHED;
+
       setTimeout(this.syncBlockHeader, 100);
     } catch (e) {
       log.error('Error start Relayer Service', { error: e });
+      // this.lastError = e && e.message;
     }
   }
 
@@ -78,6 +90,7 @@ export class RelayerService {
       }
     } catch (e) {
       log.error('Error to get new Header', { error: e, btcLastBlock: this.btcLastBlock });
+      this.lastError = e && e.message;
 
       await sleep(process.env.SYNC_INTERVAL);
     }
@@ -89,6 +102,8 @@ export class RelayerService {
 
   getInfo = () => ({
     height: this.btcLastBlock,
+    status: this.status,
+    lastError: this.lastError,
     relayContractAddress: this.relayContractAddress,
     network: process.env.NETWORK,
     btcNodeUrl: process.env.BTC_NODE_URL,

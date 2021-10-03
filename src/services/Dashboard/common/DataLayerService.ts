@@ -1,8 +1,8 @@
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import { DBService } from '../database';
+import { DBService } from '../../database';
 
-import logger from '../../logger';
+import logger from '../../../logger';
 const log = logger.module('CommonEntityService:main');
 
 export interface ILogEventsService {

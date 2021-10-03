@@ -2,7 +2,7 @@ import EventEmitter = require('events');
 import { DataLayerService, ILogEventsService } from '../common/DataLayerService';
 import { IssueRequest, IssueRequestEvent } from '../common/interfaces';
 
-import logger from '../../logger';
+import logger from '../../../logger';
 const log = logger.module('Issues:main');
 
 export interface IIssueService extends ILogEventsService {
