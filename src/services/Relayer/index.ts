@@ -48,7 +48,7 @@ export class RelayerClient {
   async start() {
     try {
       let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-        process.env.ETH_MASTER_PRIVATE_KEY
+        process.env.HMY_MASTER_PRIVATE_KEY
       );
 
       this.web3.eth.accounts.wallet.add(ethMasterAccount);

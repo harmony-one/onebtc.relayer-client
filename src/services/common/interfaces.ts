@@ -53,6 +53,7 @@ export interface IVaultRegistry {
 }
 
 export interface IssueRequest {
+  id: string;
   vault: string;
   opentime: string;
   requester: string;
@@ -64,6 +65,24 @@ export interface IssueRequest {
   period: string;
   btcHeight: string;
   status: string;
+  lastUpdate: number;
+}
+
+export interface RedeemRequest {
+  id: string;
+  vault: string;
+  opentime: string;
+  requester: string;
+  btcAddress: string;
+  amountOne: string;
+  amountBtc: string;
+  premiumOne: string;
+  fee: string;
+  transferFeeBtc: string;
+  period: string;
+  btcHeight: string;
+  status: string;
+  lastUpdate: number;
 }
 
 export interface IssueRequestEvent extends IEvent {

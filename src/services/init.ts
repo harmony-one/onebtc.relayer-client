@@ -1,18 +1,20 @@
 import EventEmitter from 'events';
 import { databaseService, DBService } from './database';
-import { LogEvents, IssueService, VaultsService } from './Dashboard';
-import { RelayerClient } from './Relayer';
 import { abi as oneBtcAbi } from '../abi/OneBtc';
 import { abi as relayAbi } from '../abi/Relay';
+import { LogEvents, IssueService, VaultsService } from './Dashboard';
+import { RelayerClient } from './Relayer';
+import { VaultClient } from './VaultClient';
 
 export interface IServices {
-  relayer: RelayerClient;
-  database: DBService;
-  onebtcEvents: LogEvents;
-  relayEvents: LogEvents;
-  vaults: VaultsService;
-  issues: IssueService;
-  redeems: IssueService;
+  relayerClient?: RelayerClient;
+  vaultClient?: VaultClient;
+  database?: DBService;
+  onebtcEvents?: LogEvents;
+  relayEvents?: LogEvents;
+  vaults?: VaultsService;
+  issues?: IssueService;
+  redeems?: IssueService;
 }
 
 export const InitServices = async (): Promise<IServices> => {
@@ -20,15 +22,17 @@ export const InitServices = async (): Promise<IServices> => {
 
   await databaseService.init();
 
-  const relayer = new RelayerClient({
+  const services: IServices = { database: databaseService };
+
+  services.relayerClient = new RelayerClient({
     database: databaseService,
     dbCollectionName: 'relay-headers',
     relayContractAddress: process.env.HMY_RELAY_CONTRACT,
   });
 
-  await relayer.start();
+  await services.relayerClient.start();
 
-  const vaults = new VaultsService({
+  services.vaults = new VaultsService({
     database: databaseService,
     dbCollectionPrefix: 'vaults',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
@@ -36,9 +40,9 @@ export const InitServices = async (): Promise<IServices> => {
     eventEmitter,
   });
 
-  await vaults.start();
+  await services.vaults.start();
 
-  const issues = new IssueService({
+  services.issues = new IssueService({
     database: databaseService,
     dbCollectionPrefix: 'issues',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
@@ -50,9 +54,9 @@ export const InitServices = async (): Promise<IServices> => {
     listenTxs: true,
   });
 
-  await issues.start();
+  await services.issues.start();
 
-  const redeems = new IssueService({
+  services.redeems = new IssueService({
     database: databaseService,
     dbCollectionPrefix: 'redeems',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
@@ -63,9 +67,9 @@ export const InitServices = async (): Promise<IServices> => {
     idEventKey: 'redeemId',
   });
 
-  await redeems.start();
+  await services.redeems.start();
 
-  const onebtcEvents = new LogEvents({
+  services.onebtcEvents = new LogEvents({
     database: databaseService,
     dbCollectionPrefix: 'onebtc-events',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
@@ -73,9 +77,9 @@ export const InitServices = async (): Promise<IServices> => {
     eventEmitter,
   });
 
-  await onebtcEvents.start();
+  await services.onebtcEvents.start();
 
-  const relayEvents = new LogEvents({
+  services.relayEvents = new LogEvents({
     database: databaseService,
     dbCollectionPrefix: 'relay-events',
     contractAddress: process.env.HMY_RELAY_CONTRACT,
@@ -83,15 +87,19 @@ export const InitServices = async (): Promise<IServices> => {
     eventEmitter,
   });
 
-  await relayEvents.start();
+  await services.relayEvents.start();
 
-  return {
-    vaults,
-    issues,
-    redeems,
-    relayEvents,
-    onebtcEvents,
-    relayer,
+  services.vaultClient = new VaultClient({
     database: databaseService,
-  };
+    dbCollectionPrefix: 'vault-client',
+    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
+    contractAbi: oneBtcAbi,
+    eventEmitter,
+    vaultId: process.env.VAULT_ID,
+    services,
+  });
+
+  await services.vaultClient.start();
+
+  return services;
 };

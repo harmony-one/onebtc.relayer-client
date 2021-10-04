@@ -1,3 +1,5 @@
+import { randomBytes } from '@harmony-js/crypto/dist/random';
+
 type TExtendError = Error & { status?: number };
 
 export const createError = (status: number, message: string): TExtendError => {
@@ -14,4 +16,8 @@ export const clear = (obj: any) => {
     if (obj[key]) acc[key] = obj[key];
     return acc;
   }, {});
+};
+
+export const uuidv4 = () => {
+  return [randomBytes(4), randomBytes(4), randomBytes(4), randomBytes(4)].join('-');
 };

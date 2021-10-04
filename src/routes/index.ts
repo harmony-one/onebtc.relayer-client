@@ -5,7 +5,7 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/relay/height',
     asyncHandler(async (req, res) => {
-      const data = await services.relayer.getLastRelayBlock();
+      const data = await services.relayerClient.getLastRelayBlock();
       return res.json(data);
     })
   );
@@ -13,7 +13,7 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/relay/info',
     asyncHandler(async (req, res) => {
-      const data = await services.relayer.getInfo();
+      const data = await services.relayerClient.getInfo();
       return res.json(data);
     })
   );
@@ -134,7 +134,7 @@ export const routes = (app, services: IServices) => {
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0, requester, vault, id } = req.query;
 
-      const data = await services.issues.getData({
+      const data = await services.redeems.getData({
         size,
         page,
         sort: { opentime: -1 },
@@ -160,7 +160,7 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/monitor',
     asyncHandler(async (req, res) => {
-      const relayer = await services.relayer.getInfo();
+      const relayerClient = await services.relayerClient.getInfo();
       const relayEvents = await services.relayEvents.getInfo();
       const mainEvents = await services.onebtcEvents.getInfo();
       const issues = await services.issues.getInfo();
@@ -168,13 +168,33 @@ export const routes = (app, services: IServices) => {
       const vaults = await services.vaults.getInfo();
 
       return res.json({
-        relayer,
+        relayerClient,
         relayEvents,
         mainEvents,
         issues,
         redeems,
         vaults,
       });
+    })
+  );
+
+  app.get(
+    '/operations/data',
+    asyncHandler(async (req, res) => {
+      const { size = 50, page = 0, requester, vault, id } = req.query;
+
+      const data = await services.vaultClient.getData({
+        size,
+        page,
+        sort: { timestamp: -1 },
+        filter: {
+          requester,
+          vault,
+          id,
+        },
+      });
+
+      return res.json(data);
     })
   );
 };

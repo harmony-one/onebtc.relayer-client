@@ -68,7 +68,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
       await this.updateOrCreateData(issue);
 
-      this.eventEmitter.emit(`ADD_${this.methodName}`, issue);
+      this.eventEmitter.emit(`ADD_${this.eventName}`, issue);
 
       if (issue.status === '1') {
         this.observableData.set(id, issue);
@@ -95,7 +95,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
           await this.updateOrCreateData(issueUpd);
 
-          this.eventEmitter.emit(`UPDATE_${this.methodName}`, issueUpd);
+          this.eventEmitter.emit(`UPDATE_${this.eventName}`, issueUpd);
 
           if (issueUpd.status !== '1') {
             this.observableData.delete(id);
