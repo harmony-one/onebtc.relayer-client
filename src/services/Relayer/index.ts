@@ -7,7 +7,7 @@ import { getBlockByHeight, getHeight } from '../../bitcoin/rpc';
 const BN = require('bn.js');
 
 import logger from '../../logger';
-import {sleep} from "../../utils";
+import { sleep } from '../../utils';
 const log = logger.module('relay:Service');
 
 export interface IRelayerClient {
@@ -47,18 +47,25 @@ export class RelayerClient {
 
   async start() {
     try {
-      let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-        process.env.HMY_RELAY_PRIVATE_KEY
-      );
+      if (process.env.HMY_RELAY_PRIVATE_KEY) {
+        let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
+          process.env.HMY_RELAY_PRIVATE_KEY
+        );
 
-      this.web3.eth.accounts.wallet.add(ethMasterAccount);
-      this.web3.eth.defaultAccount = ethMasterAccount.address;
-      this.ethMasterAccount = ethMasterAccount.address;
+        this.web3.eth.accounts.wallet.add(ethMasterAccount);
+        this.web3.eth.defaultAccount = ethMasterAccount.address;
+        this.ethMasterAccount = ethMasterAccount.address;
 
-      this.relayContract = new this.web3.eth.Contract(abi as AbiItem[], this.relayContractAddress);
+        this.relayContract = new this.web3.eth.Contract(
+          abi as AbiItem[],
+          this.relayContractAddress
+        );
 
-      const res = await this.relayContract.methods.getBestBlock().call();
-      this.btcLastBlock = Number(res.height);
+        const res = await this.relayContract.methods.getBestBlock().call();
+        this.btcLastBlock = Number(res.height);
+      } else {
+        throw new Error('HMY_RELAY_PRIVATE_KEY not found');
+      }
 
       log.info(`Start Relayer Service - ok`, { height: this.btcLastBlock });
 

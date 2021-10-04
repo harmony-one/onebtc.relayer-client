@@ -11,6 +11,7 @@ const log = logger.module('WalletBTC:main');
 export interface IWalletBTC {
   services: IServices;
   vaultId: string;
+  btcPrivateKey: string;
 }
 
 export class WalletBTC {
