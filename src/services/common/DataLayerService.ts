@@ -80,7 +80,7 @@ export class DataLayerService<T> {
 
     const from = params.page * params.size;
 
-    const filter = clear(params.filter);
+    const filter = params.filter && clear(params.filter);
 
     const total = await this.database.getCollectionCount(collectionName, filter);
 

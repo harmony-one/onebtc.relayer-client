@@ -3,20 +3,20 @@ import { ACTION_TYPE } from '../interfaces';
 import { IOperationInitParams } from '../Operation';
 import { waitTxForConfirmations } from '../../../bitcoin/rpc';
 import { executeRedeemHmy } from '../../../bitcoin/executeRedeemHmy';
-import { IServices } from '../../init';
+import { WalletBTC } from '../WalletBTC';
 
 import logger from '../../../logger';
 const log = logger.module('VaultClient:redeem');
 
-export const redeem = (params: IOperationInitParams, services: IServices) => {
+export const redeem = (params: IOperationInitParams, wallet: WalletBTC) => {
   const transferBTC = new Action({
     type: ACTION_TYPE.transferBTC,
-    callFunction: async () => {
-      return {
-        status: true,
-        transactionHash: '75143a0ae3511938897a3a5e4985c7955362674fae51a1bc8c21814a850bde2e',
-      };
-    },
+    callFunction: () =>
+      wallet.sendTx({
+        to: params.btcAddress,
+        amount: params.amount,
+        id: params.id,
+      }),
   });
 
   const waitingConfirmations = new Action({

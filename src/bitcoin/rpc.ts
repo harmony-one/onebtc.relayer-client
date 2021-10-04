@@ -84,3 +84,11 @@ export const getMerkleProof = async (hash: string, height: number) => {
   const merkleProofRes = await client.getMerkleProof(hash, height);
   return merkleProofRes[0].map(value => Buffer.from(value, 'hex').toString('hex')).join('');
 };
+
+export const searchTxByHex = async (params: { addrHex: string; txHex: string }) => {
+  const bech32Address = getBech32FromHex(params.addrHex);
+
+  const response = await axios.get(`${process.env.BTC_NODE_URL}/tx/address/${bech32Address}`);
+
+  return response.data.find(item => item.hex === params.txHex);
+};
