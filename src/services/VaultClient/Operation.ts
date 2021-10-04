@@ -1,8 +1,9 @@
 import { OPERATION_TYPE, STATUS } from './interfaces';
 import { Action } from './Action';
-import logger from '../../logger';
 import { generateActionsPool } from './actions-pool';
-import { IServices } from '../init';
+import {WalletBTC} from "./WalletBTC";
+
+import logger from '../../logger';
 const log = logger.module('VaultClient:operation');
 
 export interface IOperationInitParams {
@@ -38,7 +39,7 @@ export class Operation {
   asyncConstructor = async (
     params: IOperationInitParams,
     callback: TSyncOperationCallback,
-    services: IServices
+    wallet: WalletBTC
   ) => {
     this.id = params.id;
     this.amount = params.amount;
@@ -52,7 +53,7 @@ export class Operation {
 
     this.syncOperationCallback = callback;
 
-    const { actions, rollbackActions } = generateActionsPool(params, services);
+    const { actions, rollbackActions } = generateActionsPool(params, wallet);
 
     this.actions = actions;
     this.rollbackActions = rollbackActions;

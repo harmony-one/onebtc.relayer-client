@@ -6,11 +6,12 @@ import {
   IssueRequestEvent,
   RedeemRequest,
 } from '../common';
-import logger from '../../logger';
 import { IServices } from '../init';
 import { IOperationInitParams, Operation } from './Operation';
 import { OPERATION_TYPE } from './interfaces';
+import { WalletBTC } from './WalletBTC';
 // import { IssueRequestEvent } from '../common/interfaces';
+import logger from '../../logger';
 const log = logger.module('VaultClient:main');
 
 export interface IVaultClient extends ILogEventsService {
@@ -31,6 +32,8 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
   waitInterval = Number(process.env.WAIT_INTERVAL) || 1000;
 
+  walletBTC: WalletBTC;
+
   constructor(params: IVaultClient) {
     super(params);
 
@@ -42,6 +45,8 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     this.eventEmitter = params.eventEmitter;
     // this.eventEmitter.on(`ADD_${CONTRACT_EVENT.IssueRequest}`, this.addIssue);
     this.eventEmitter.on(`ADD_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
+
+    this.walletBTC = new WalletBTC({ services: params.services, vaultId: this.vaultId });
   }
 
   async start() {
@@ -90,7 +95,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
         amount: params.amount,
       },
       this.saveOperationToDB,
-      this.services
+      this.walletBTC
     );
 
     await this.saveOperationToDB(operation);

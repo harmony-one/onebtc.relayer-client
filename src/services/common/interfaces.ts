@@ -66,6 +66,15 @@ export interface IssueRequest {
   btcHeight: string;
   status: string;
   lastUpdate: number;
+  btcTx?: {
+    hash: string;
+    hex: string;
+    fee: number;
+    rate: number;
+    height: number;
+    inputs: any[];
+    outputs: any[];
+  };
 }
 
 export interface RedeemRequest {
