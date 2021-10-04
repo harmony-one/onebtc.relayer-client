@@ -1,8 +1,8 @@
 import EventEmitter = require('events');
-import { DataLayerService, ILogEventsService } from '../common/DataLayerService';
-import { IssueRequest, IssueRequestEvent } from '../common/interfaces';
+import { DataLayerService, ILogEventsService, IssueRequest, IssueRequestEvent } from '../../common';
 
 import logger from '../../../logger';
+import { getTxByParams } from '../../../bitcoin/rpc';
 const log = logger.module('Issues:main');
 
 export interface IIssueService extends ILogEventsService {
@@ -10,6 +10,7 @@ export interface IIssueService extends ILogEventsService {
   eventName: string;
   methodName: string;
   idEventKey: string;
+  listenTxs?: boolean;
 }
 
 export class IssueService extends DataLayerService<IssueRequest> {
@@ -18,9 +19,11 @@ export class IssueService extends DataLayerService<IssueRequest> {
   eventName: string;
   methodName: string;
   idEventKey: string;
+  listenTxs: boolean;
 
   constructor(params: IIssueService) {
     super(params);
+    this.listenTxs = params.listenTxs;
 
     this.eventEmitter = params.eventEmitter;
 
@@ -36,7 +39,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
         size: 1000,
         page: 0,
         filter: { status: '1' },
-        sort: { opentime: -1 }
+        sort: { opentime: -1 },
       });
 
       data.content.forEach(item => this.observableData.set(item.id, item));
@@ -52,14 +55,20 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
   addIssue = async (data: IssueRequestEvent) => {
     try {
-      const { requester } = data.returnValues;
+      const { requester, btcAddress, amount } = data.returnValues;
       const id = data.returnValues[this.idEventKey];
 
       // TODO: if next string fail - issue will lost
       const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
       const issue = { ...issueInfo, id };
 
+      if (this.listenTxs) {
+        issue.btcTx = await getTxByParams({ btcAddress, value: amount });
+      }
+
       await this.updateOrCreateData(issue);
+
+      this.eventEmitter.emit(`ADD_${this.methodName}`, issue);
 
       if (issue.status === '1') {
         this.observableData.set(id, issue);
@@ -79,7 +88,14 @@ export class IssueService extends DataLayerService<IssueRequest> {
           const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
           const issueUpd = { ...issueInfo, id };
 
+          if (this.listenTxs) {
+            const { btcAddress, amount } = issueInfo;
+            issueUpd.btcTx = await getTxByParams({ btcAddress, value: amount });
+          }
+
           await this.updateOrCreateData(issueUpd);
+
+          this.eventEmitter.emit(`UPDATE_${this.methodName}`, issueUpd);
 
           if (issueUpd.status !== '1') {
             this.observableData.delete(id);

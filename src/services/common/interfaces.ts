@@ -76,3 +76,9 @@ export interface IssueRequestEvent extends IEvent {
     btcAddress: string;
   };
 }
+
+export enum CONTRACT_EVENT {
+  RegisterVault = 'RegisterVault',
+  RedeemRequest = 'RedeemRequest',
+  IssueRequest = 'IssueRequest',
+}

@@ -96,8 +96,19 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/issues/data',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0, id } = req.query;
-      const data = await services.issues.getData({ size, page, id, sort: { opentime: -1 } });
+      const { size = 50, page = 0, requester, vault, id } = req.query;
+
+      const data = await services.issues.getData({
+        size,
+        page,
+        sort: { opentime: -1 },
+        filter: {
+          requester,
+          vault,
+          id,
+        },
+      });
+
       return res.json(data);
     })
   );
@@ -121,8 +132,19 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/redeems/data',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0, id } = req.query;
-      const data = await services.redeems.getData({ size, page, id, sort: { opentime: -1 } });
+      const { size = 50, page = 0, requester, vault, id } = req.query;
+
+      const data = await services.issues.getData({
+        size,
+        page,
+        sort: { opentime: -1 },
+        filter: {
+          requester,
+          vault,
+          id,
+        },
+      });
+
       return res.json(data);
     })
   );

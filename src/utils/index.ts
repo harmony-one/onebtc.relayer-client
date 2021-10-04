@@ -6,3 +6,12 @@ export const createError = (status: number, message: string): TExtendError => {
 
   return error;
 };
+
+export const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+export const clear = (obj: any) => {
+  return Object.keys(obj).reduce((acc, key) => {
+    if (obj[key]) acc[key] = obj[key];
+    return acc;
+  }, {});
+};

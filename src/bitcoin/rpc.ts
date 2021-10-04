@@ -1,7 +1,10 @@
+import { getBech32FromHex } from './helpers';
+
 const axios = require('axios');
 const bitcoin = require('bitcoinjs-lib');
 
-export const sleep = ms => new Promise(res => setTimeout(res, ms));
+import logger from '../logger';
+const log = logger.module('BTC-RPC:main');
 
 export const getBlockByHeight = async height => {
   const response = await axios.get(`${process.env.BTC_NODE_URL}/header/${height}`);
@@ -25,4 +28,25 @@ export const getHeight = async () => {
   const response = await axios.get(`${process.env.BTC_NODE_URL}`);
 
   return response.data.chain.height;
+};
+
+export const getTxByParams = async (params: { btcAddress: string; value: string }) => {
+  try {
+    const bech32Address = getBech32FromHex(params.btcAddress);
+
+    const response = await axios.get(`${process.env.BTC_NODE_URL}/tx/address/${bech32Address}`);
+
+    return response.data.find(
+      (item: any) =>
+        item.outputs &&
+        item.outputs.find(out => out.address === bech32Address) &&
+        !item.inputs.some(inp => inp.coin?.address === bech32Address)
+    );
+  } catch (e) {
+    log.error('Error getTransactionByAddress', {
+      error: e,
+      params,
+      url: process.env.BTC_NODE_URL,
+    });
+  }
 };

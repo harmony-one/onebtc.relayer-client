@@ -3,13 +3,14 @@ import { DBService } from '../database';
 import { abi } from '../../abi/Relay';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
-import { getBlockByHeight, getHeight, sleep } from './btc-rpc';
+import { getBlockByHeight, getHeight } from '../../bitcoin/rpc';
 const BN = require('bn.js');
 
 import logger from '../../logger';
+import {sleep} from "../../utils";
 const log = logger.module('relay:Service');
 
-export interface IRelayerService {
+export interface IRelayerClient {
   database: DBService;
   dbCollectionName: string;
   relayContractAddress: string;
@@ -21,7 +22,7 @@ enum RELAYER_STATUS {
   PAUSED = 'PAUSED',
 }
 
-export class RelayerService {
+export class RelayerClient {
   database: DBService;
   dbCollectionName = 'headers';
 
@@ -35,7 +36,7 @@ export class RelayerService {
   status = RELAYER_STATUS.STOPPED;
   lastError = '';
 
-  constructor(params: IRelayerService) {
+  constructor(params: IRelayerClient) {
     this.database = params.database;
     this.dbCollectionName = params.dbCollectionName;
 
@@ -65,7 +66,7 @@ export class RelayerService {
 
       setTimeout(this.syncBlockHeader, 100);
     } catch (e) {
-      log.error('Error start Relayer Service', { error: e });
+      log.error('Start Relayer Service - failed', { error: e });
       // this.lastError = e && e.message;
     }
   }

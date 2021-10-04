@@ -3,7 +3,7 @@ import { AbiItem } from 'web3-utils/types';
 import { DBService } from '../../database';
 import { getContractDeploymentBlock, getEventsAbi, getHmyLogs } from './api';
 import EventEmitter = require('events');
-import { IEvent } from '../common/interfaces';
+import { IEvent } from '../../common';
 
 import logger from '../../../logger';
 const log = logger.module('logEvents:main');

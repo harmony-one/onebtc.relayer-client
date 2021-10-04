@@ -1,12 +1,12 @@
 import EventEmitter from 'events';
 import { databaseService, DBService } from './database';
 import { LogEvents, IssueService, VaultsService } from './Dashboard';
-import { RelayerService } from './Relayer';
+import { RelayerClient } from './Relayer';
 import { abi as oneBtcAbi } from '../abi/OneBtc';
 import { abi as relayAbi } from '../abi/Relay';
 
 export interface IServices {
-  relayer: RelayerService;
+  relayer: RelayerClient;
   database: DBService;
   onebtcEvents: LogEvents;
   relayEvents: LogEvents;
@@ -20,7 +20,7 @@ export const InitServices = async (): Promise<IServices> => {
 
   await databaseService.init();
 
-  const relayer = new RelayerService({
+  const relayer = new RelayerClient({
     database: databaseService,
     dbCollectionName: 'relay-headers',
     relayContractAddress: process.env.HMY_RELAY_CONTRACT,
@@ -47,6 +47,7 @@ export const InitServices = async (): Promise<IServices> => {
     eventName: 'IssueRequest',
     methodName: 'issueRequests',
     idEventKey: 'issueId',
+    listenTxs: true,
   });
 
   await issues.start();

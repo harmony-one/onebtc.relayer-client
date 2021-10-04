@@ -1,7 +1,6 @@
 import EventEmitter = require('events');
 import { DBService } from '../../database';
-import { IRegisterVaultEvent, IVaultRegistry } from '../common/interfaces';
-import { DataLayerService } from '../common/DataLayerService';
+import { DataLayerService, IRegisterVaultEvent, IVaultRegistry } from '../../common';
 
 import logger from '../../../logger';
 const log = logger.module('Vaults:main');
