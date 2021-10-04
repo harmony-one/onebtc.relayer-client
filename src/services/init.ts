@@ -95,7 +95,6 @@ export const InitServices = async (): Promise<IServices> => {
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     contractAbi: oneBtcAbi,
     eventEmitter,
-    vaultId: process.env.VAULT_ID,
     services,
   });
 

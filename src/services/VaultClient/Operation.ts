@@ -1,9 +1,10 @@
 import { OPERATION_TYPE, STATUS } from './interfaces';
 import { Action } from './Action';
 import { generateActionsPool } from './actions-pool';
-import {WalletBTC} from "./WalletBTC";
+import { WalletBTC } from './WalletBTC';
 
 import logger from '../../logger';
+import { HmyContractManager } from '../../harmony/HmyContractManager';
 const log = logger.module('VaultClient:operation');
 
 export interface IOperationInitParams {
@@ -39,7 +40,8 @@ export class Operation {
   asyncConstructor = async (
     params: IOperationInitParams,
     callback: TSyncOperationCallback,
-    wallet: WalletBTC
+    wallet: WalletBTC,
+    hmyContractManager: HmyContractManager
   ) => {
     this.id = params.id;
     this.amount = params.amount;
@@ -53,7 +55,7 @@ export class Operation {
 
     this.syncOperationCallback = callback;
 
-    const { actions, rollbackActions } = generateActionsPool(params, wallet);
+    const { actions, rollbackActions } = generateActionsPool(params, wallet, hmyContractManager);
 
     this.actions = actions;
     this.rollbackActions = rollbackActions;

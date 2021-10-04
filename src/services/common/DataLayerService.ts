@@ -22,6 +22,7 @@ export class DataLayerService<T> {
 
   web3: Web3;
   contractAddress: string;
+  contractAbi: any;
   contract: Contract;
 
   observableData: Map<string, T & { id: string }> = new Map();
@@ -32,6 +33,7 @@ export class DataLayerService<T> {
 
     this.web3 = new Web3(this.nodeURL);
     this.contractAddress = params.contractAddress;
+    this.contractAbi = params.contractAbi;
     this.contract = new this.web3.eth.Contract(params.contractAbi, params.contractAddress);
   }
 
