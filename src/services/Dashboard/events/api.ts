@@ -2,7 +2,7 @@ import axios from 'axios';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils/types';
 
-import logger from '../../logger';
+import logger from '../../../logger';
 const log = logger.module('logEvents:api');
 
 export const getContractDeploymentBlock = async (address): Promise<number> => {

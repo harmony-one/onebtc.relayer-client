@@ -3,6 +3,7 @@ import { Contract } from 'web3-eth-contract';
 import { DBService } from '../database';
 
 import logger from '../../logger';
+import {clear} from "../../utils";
 const log = logger.module('CommonEntityService:main');
 
 export interface ILogEventsService {
@@ -79,14 +80,16 @@ export class DataLayerService<T> {
 
     const from = params.page * params.size;
 
-    const total = await this.database.getCollectionCount(collectionName);
+    const filter = clear(params.filter);
+
+    const total = await this.database.getCollectionCount(collectionName, filter);
 
     const data = await this.database.getCollectionData(
       collectionName,
       params.sort,
       Number(params.size),
       from,
-      params.id ? { id: params.id } : params.filter
+      params.id ? { id: params.id } : filter
     );
 
     return {

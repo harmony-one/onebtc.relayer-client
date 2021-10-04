@@ -65,13 +65,13 @@ export class DBService {
     return await collection.updateOne(filter, { $set: data }, { upsert: true });
   };
 
-  public getCollectionCount = async (collectionName: string) => {
+  public getCollectionCount = async (collectionName: string, filter?: Record<string, any>) => {
     if(!this.isInit) return 0;
 
     try {
       let collection = this.db.collection(collectionName);
 
-      return await collection.count();
+      return await collection.count(filter);
     } catch (e) {
       log.error('Error getCollectionCount', { error: e });
 

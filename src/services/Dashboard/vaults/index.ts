@@ -1,12 +1,11 @@
 import EventEmitter = require('events');
-import { DBService } from '../database';
-import { IRegisterVaultEvent, IVaultRegistry } from '../common/interfaces';
-import { DataLayerService } from '../common/DataLayerService';
+import { DBService } from '../../database';
+import { DataLayerService, IRegisterVaultEvent, IVaultRegistry } from '../../common';
 
-import logger from '../../logger';
+import logger from '../../../logger';
 const log = logger.module('Vaults:main');
 
-export interface ILogEventsService {
+export interface IVaultsService {
   database: DBService;
   dbCollectionPrefix: string;
   eventEmitter: EventEmitter;
@@ -18,7 +17,7 @@ export class VaultsService extends DataLayerService<IVaultRegistry> {
   waitInterval = Number(process.env.WAIT_INTERVAL) || 1000;
   eventEmitter: EventEmitter;
 
-  constructor(params: ILogEventsService) {
+  constructor(params: IVaultsService) {
     super(params);
 
     this.eventEmitter = params.eventEmitter;

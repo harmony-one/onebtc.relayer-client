@@ -33,8 +33,10 @@
     "testEnvironment": "node"
   },
   "dependencies": {
+    "@harmony-js/crypto": "^0.1.56",
     "@openzeppelin/contracts": "^3.2.0",
     "@sentry/node": "^5.25.0",
+    "@summa-tx/bitcoin-spv-js-clients": "^0.1.4",
     "autobind-decorator": "^2.4.0",
     "aws-sdk": "^2.767.0",
     "axios": "^0.21.1",

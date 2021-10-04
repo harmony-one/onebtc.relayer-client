@@ -3,19 +3,26 @@ import { DBService } from '../database';
 import { abi } from '../../abi/Relay';
 import { AbiItem } from 'web3-utils';
 import { Contract } from 'web3-eth-contract';
-import { getBlockByHeight, getHeight, sleep } from './btc-rpc';
+import { getBlockByHeight, getHeight } from '../../bitcoin/rpc';
 const BN = require('bn.js');
 
 import logger from '../../logger';
+import {sleep} from "../../utils";
 const log = logger.module('relay:Service');
 
-export interface IRelayerService {
+export interface IRelayerClient {
   database: DBService;
   dbCollectionName: string;
   relayContractAddress: string;
 }
 
-export class RelayerService {
+enum RELAYER_STATUS {
+  STOPPED = 'STOPPED',
+  LAUNCHED = 'LAUNCHED',
+  PAUSED = 'PAUSED',
+}
+
+export class RelayerClient {
   database: DBService;
   dbCollectionName = 'headers';
 
@@ -26,19 +33,22 @@ export class RelayerService {
 
   btcLastBlock: number;
 
-  constructor(params: IRelayerService) {
+  status = RELAYER_STATUS.STOPPED;
+  lastError = '';
+
+  constructor(params: IRelayerClient) {
     this.database = params.database;
     this.dbCollectionName = params.dbCollectionName;
 
     this.web3 = new Web3(process.env.HMY_NODE_URL);
-    
+
     this.relayContractAddress = params.relayContractAddress;
   }
 
   async start() {
     try {
       let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-        process.env.ETH_MASTER_PRIVATE_KEY
+        process.env.HMY_MASTER_PRIVATE_KEY
       );
 
       this.web3.eth.accounts.wallet.add(ethMasterAccount);
@@ -52,9 +62,12 @@ export class RelayerService {
 
       log.info(`Start Relayer Service - ok`, { height: this.btcLastBlock });
 
+      this.status = RELAYER_STATUS.LAUNCHED;
+
       setTimeout(this.syncBlockHeader, 100);
     } catch (e) {
-      log.error('Error start Relayer Service', { error: e });
+      log.error('Start Relayer Service - failed', { error: e });
+      // this.lastError = e && e.message;
     }
   }
 
@@ -78,6 +91,7 @@ export class RelayerService {
       }
     } catch (e) {
       log.error('Error to get new Header', { error: e, btcLastBlock: this.btcLastBlock });
+      this.lastError = e && e.message;
 
       await sleep(process.env.SYNC_INTERVAL);
     }
@@ -89,6 +103,8 @@ export class RelayerService {
 
   getInfo = () => ({
     height: this.btcLastBlock,
+    status: this.status,
+    lastError: this.lastError,
     relayContractAddress: this.relayContractAddress,
     network: process.env.NETWORK,
     btcNodeUrl: process.env.BTC_NODE_URL,
