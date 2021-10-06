@@ -135,7 +135,8 @@ export class WalletBTC {
     psbt.setVersion(2); // These are defaults. This line is not needed.
     psbt.setLocktime(0); // These are defaults. This line is not needed.
 
-    const fee = await getNetworkFee();
+    const networkFee = await getNetworkFee();
+    const fee = Math.max(networkFee, 1000);
 
     const freeOutputs = await this.getFreeOutputs(Number(params.amount) + fee);
 
