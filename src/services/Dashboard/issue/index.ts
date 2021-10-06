@@ -2,7 +2,7 @@ import EventEmitter = require('events');
 import { DataLayerService, ILogEventsService, IssueRequest, IssueRequestEvent } from '../../common';
 
 import logger from '../../../logger';
-import { getTxByParams } from '../../../bitcoin/rpc';
+import { findTxByRedeemId, getTxByParams } from '../../../bitcoin/rpc';
 const log = logger.module('Issues:main');
 
 export interface IIssueService extends ILogEventsService {
@@ -63,7 +63,14 @@ export class IssueService extends DataLayerService<IssueRequest> {
       const issue = { ...issueInfo, id };
 
       if (this.listenTxs) {
-        issue.btcTx = await getTxByParams({ btcAddress, value: amount });
+        switch (this.idEventKey) {
+          case 'issueId':
+            issue.btcTx = await getTxByParams({ btcAddress, value: amount });
+            break;
+          case 'redeemId':
+            issue.btcTx = await findTxByRedeemId({ btcAddress, id });
+            break;
+        }
       }
 
       await this.updateOrCreateData(issue);
@@ -89,8 +96,16 @@ export class IssueService extends DataLayerService<IssueRequest> {
           const issueUpd = { ...issueInfo, id };
 
           if (this.listenTxs) {
-            const { btcAddress, amount } = issueInfo;
-            issueUpd.btcTx = await getTxByParams({ btcAddress, value: amount });
+            const { btcAddress, amount, id } = issueInfo;
+
+            switch (this.idEventKey) {
+              case 'issueId':
+                issueUpd.btcTx = await getTxByParams({ btcAddress, value: amount });
+                break;
+              case 'redeemId':
+                issueUpd.btcTx = await findTxByRedeemId({ btcAddress, id });
+                break;
+            }
           }
 
           await this.updateOrCreateData(issueUpd);

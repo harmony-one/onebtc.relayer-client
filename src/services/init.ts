@@ -65,6 +65,7 @@ export const InitServices = async (): Promise<IServices> => {
     eventName: 'RedeemRequest',
     methodName: 'redeemRequests',
     idEventKey: 'redeemId',
+    listenTxs: true,
   });
 
   await services.redeems.start();

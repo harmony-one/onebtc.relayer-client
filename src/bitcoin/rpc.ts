@@ -9,6 +9,8 @@ const hash256 = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/hash256');
 const assert = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/bsert');
 
 import logger from '../logger';
+import { Buffer } from 'buffer';
+import BN from 'bn.js';
 const log = logger.module('BTC-RPC:main');
 
 export const getBlockByHeight = async height => {
@@ -156,5 +158,20 @@ export const findTxByScript = async (params: { bech32Address: string; script: st
     return tx.outputs.some(
       out => (out.address = params.bech32Address && out.script === params.script)
     );
+  });
+};
+
+export const findTxByRedeemId = async (params: { btcAddress: string; id: string }) => {
+  const toBech32Address = bitcoin.address.toBech32(
+    Buffer.from(params.btcAddress.slice(2), 'hex'),
+    0,
+    'tb'
+  );
+
+  const emb = bitcoin.payments.embed({ data: [new BN(params.id).toBuffer()] });
+
+  return await findTxByScript({
+    bech32Address: toBech32Address,
+    script: emb.output.toString('hex'),
   });
 };
