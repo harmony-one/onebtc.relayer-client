@@ -30,7 +30,9 @@ export const InitServices = async (): Promise<IServices> => {
     relayContractAddress: process.env.HMY_RELAY_CONTRACT,
   });
 
-  await services.relayerClient.start();
+  if(process.env.HMY_RELAY_PRIVATE_KEY) {
+    await services.relayerClient.start();
+  }
 
   services.vaults = new VaultsService({
     database: databaseService,
