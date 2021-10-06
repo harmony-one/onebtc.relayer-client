@@ -21,3 +21,5 @@ export const clear = (obj: any) => {
 export const uuidv4 = () => {
   return [randomBytes(4), randomBytes(4), randomBytes(4), randomBytes(4)].join('-');
 };
+
+export const bn = b => BigInt(`0x${b.toString('hex')}`);

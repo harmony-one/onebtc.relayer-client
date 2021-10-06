@@ -194,7 +194,41 @@ export const routes = (app, services: IServices) => {
         },
       });
 
-      return res.json(data);
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/vault-client/info',
+    asyncHandler(async (req, res) => {
+      const data = await services.vaultClient.info();
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.post(
+    '/vault-client/register',
+    asyncHandler(async (req, res) => {
+      const data = await services.vaultClient.register(req.body.collateral);
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/vault-client/outputs',
+    asyncHandler(async (req, res) => {
+      const data = await services.vaultClient.walletBTC.getFreeOutputs(
+        req.query.amount || 0,
+        !req.query.amount
+      );
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
     })
   );
 };

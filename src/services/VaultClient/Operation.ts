@@ -124,9 +124,10 @@ export class Operation {
 
     if (this.status === STATUS.IN_PROGRESS) {
       this.status = STATUS.SUCCESS;
+      log.info('Operation success', { id: this.id, btcAddress: this.btcAddress });
     }
 
-    // log.info('Operation end', { type: this.type.toString(), token: this.token });
+    // log.info('Operation success', { status: this.status, id: this.id });
 
     await this.syncOperationCallback(this);
   };
