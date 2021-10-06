@@ -8,14 +8,15 @@ import {
 } from '../common';
 import { IServices } from '../init';
 import { IOperationInitParams, Operation } from './Operation';
-import { OPERATION_TYPE } from './interfaces';
+import { OPERATION_TYPE, STATUS } from './interfaces';
 import { WalletBTC } from './WalletBTC';
 import { HmyContractManager } from '../../harmony/HmyContractManager';
-const bitcoin = require('bitcoinjs-lib');
-
 import logger from '../../logger';
 import { bn } from '../../utils';
 import { Buffer } from 'buffer';
+
+const bitcoin = require('bitcoinjs-lib');
+
 const log = logger.module('VaultClient:main');
 
 export interface IVaultClient extends ILogEventsService {
@@ -97,14 +98,16 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   };
 
   validateOperationBeforeCreate = async (params: IOperationInitParams) => {
-    if (this.operations.find(o => o.id === params.id)) {
-      log.error('Operation already created', { params });
+    if (this.operations.find(o => o.id === params.id && o.status === STATUS.SUCCESS)) {
+      log.error('Operation already completed', { params });
       throw new Error('This operation already created');
     }
   };
 
   createOperation = async (params: IOperationInitParams) => {
     await this.validateOperationBeforeCreate(params);
+
+    log.info('Start new operation', { params });
 
     const operation = new Operation();
 

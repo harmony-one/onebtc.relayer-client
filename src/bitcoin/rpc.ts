@@ -4,6 +4,10 @@ import { sleep } from '../utils';
 const bitcoin = require('bitcoinjs-lib');
 const { BcoinClient } = require('@summa-tx/bitcoin-spv-js-clients');
 
+const merkle = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/merkle');
+const hash256 = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/hash256');
+const assert = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/bsert');
+
 import logger from '../logger';
 const log = logger.module('BTC-RPC:main');
 
@@ -107,10 +111,10 @@ const options = {
 
 const client = new BcoinClient(options);
 
-export const getMerkleProof = async (hash: string, height: number) => {
-  const merkleProofRes = await client.getMerkleProof(hash, height);
-  return merkleProofRes[0].map(value => Buffer.from(value, 'hex').toString('hex')).join('');
-};
+// export const getMerkleProof = async (hash: string, height: number) => {
+//   const merkleProofRes = await client.getMerkleProof(hash, height);
+//   return merkleProofRes[0].map(value => Buffer.from(value, 'hex').toString('hex')).join('');
+// };
 
 export const searchTxByHex = async (params: { bech32Address: string; txHex: string }) => {
   const response = await axios.get(
@@ -118,4 +122,39 @@ export const searchTxByHex = async (params: { bech32Address: string; txHex: stri
   );
 
   return response.data.find(item => item.hex === params.txHex);
+};
+
+export const getMerkleProof = async (txid, height) => {
+  const response = await axios.get(`${process.env.BTC_NODE_URL}/block/${height}`);
+  const block = response.data;
+
+  let index = block.txs.findIndex(tx => tx.hash === txid);
+
+  const txs = block.txs.map(tx => Buffer.from(tx.hash, 'hex').reverse());
+
+  assert(index >= 0, 'Transaction not in block.');
+
+  const [root] = merkle.createRoot(hash256, txs.slice());
+  assert.bufferEqual(Buffer.from(block.merkleRoot, 'hex').reverse(), root);
+
+  const branch = merkle.createBranch(hash256, index, txs.slice());
+
+  const proof = [];
+  for (const hash of branch) {
+    proof.push(hash.toString('hex'));
+  }
+
+  // return [proof, index];
+
+  return proof.map(value => Buffer.from(value, 'hex').toString('hex')).join('');
+};
+
+export const findTxByScript = async (params: { bech32Address: string; script: string }) => {
+  const txs = await getTxsByAddress(params.bech32Address);
+
+  return txs.find(tx => {
+    return tx.outputs.some(
+      out => (out.address = params.bech32Address && out.script === params.script)
+    );
+  });
 };

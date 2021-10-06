@@ -1,6 +1,7 @@
 const BN = require('bn.js');
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
+const bitcoin = require('bitcoinjs-lib');
 import { getBlockByHeight, getMerkleProof, getTransactionByHash } from '../bitcoin/rpc';
 
 import logger from '../logger';
@@ -36,20 +37,20 @@ export class HmyContractManager {
     requester: string;
     vault: string;
   }) => {
-    console.log(1);
     const { height, index, hash, hex } = await getTransactionByHash(params.transactionHash);
-    console.log(2);
+
     const block = await getBlockByHeight(height);
-    console.log(3);
     const proof = await getMerkleProof(hash, height);
-    console.log(4);
+
+    const tx = bitcoin.Transaction.fromHex(hex);
+    const hexForTxId = tx.__toBuffer().toString('hex');
 
     const res = await this.contract.methods
       .executeIssue(
         params.requester,
         params.redeemId,
         '0x' + proof,
-        '0x' + hex,
+        '0x' + hexForTxId,
         height,
         index,
         '0x' + block.toHex()

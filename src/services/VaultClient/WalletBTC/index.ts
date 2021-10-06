@@ -4,7 +4,12 @@ const bitcoin = require('bitcoinjs-lib');
 const BN = require('bn.js');
 
 import logger from '../../../logger';
-import { getNetworkFee, getTxsByAddress, searchTxByHex } from '../../../bitcoin/rpc';
+import {
+  findTxByScript,
+  getNetworkFee,
+  getTxsByAddress,
+  searchTxByHex,
+} from '../../../bitcoin/rpc';
 import { IssueRequest } from '../../common';
 import { getBech32FromHex } from '../../../bitcoin/helpers';
 import { Buffer } from 'buffer';
@@ -94,6 +99,35 @@ export class WalletBTC {
   };
 
   sendTx = async (params: { amount: string; to: string; id: string }) => {
+    const toBech32Address = bitcoin.address.toBech32(
+      Buffer.from(params.to.slice(2), 'hex'),
+      0,
+      'tb'
+    );
+
+    const emb = bitcoin.payments.embed({ data: [new BN(params.id).toBuffer()] });
+
+    // search the same tx
+    const createdTx = await findTxByScript({
+      bech32Address: toBech32Address,
+      script: emb.output.toString('hex'),
+    });
+
+    if (createdTx) {
+      log.info('Transaction already created - skip send BTC', {
+        id: params.id,
+        tx: createdTx.hash,
+        toBech32Address,
+      });
+
+      return {
+        status: true,
+        transactionHash: createdTx.hash,
+        tx: createdTx,
+      };
+    }
+    // search the same tx -- end
+
     const psbt = new bitcoin.Psbt({
       network: bitcoin.networks.testnet,
     });
@@ -114,12 +148,6 @@ export class WalletBTC {
         nonWitnessUtxo: utxo,
       });
     });
-
-    const toBech32Address = bitcoin.address.toBech32(
-      Buffer.from(params.to.slice(2), 'hex'),
-      0,
-      'tb'
-    );
 
     psbt.addOutput({
       address: toBech32Address,
@@ -172,6 +200,12 @@ export class WalletBTC {
         transactionHash: '',
       };
     }
+
+    log.info('Transaction succefully created', {
+      id: params.id,
+      tx: tx.hash,
+      toBech32Address,
+    });
 
     return {
       status: true,
