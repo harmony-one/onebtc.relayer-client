@@ -96,7 +96,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
           const issueUpd = { ...issueInfo, id };
 
           if (this.listenTxs) {
-            const { btcAddress, amount, id } = issueInfo;
+            const { btcAddress, amount } = issueUpd;
 
             switch (this.idEventKey) {
               case 'issueId':
