@@ -31,6 +31,33 @@ export const getHeight = async () => {
   return response.data.chain.height;
 };
 
+export const getNetworkFee = async () => {
+  try {
+    const res = await axios.get(`${process.env.BTC_NODE_URL}/fee`);
+
+    return Number(res.data.rate);
+  } catch (e) {
+    log.error('Error getNetworkFee', {
+      error: e,
+      url: process.env.BTC_NODE_URL,
+    });
+  }
+};
+
+export const getTxsByAddress = async (bech32Address: string) => {
+  try {
+    const response = await axios.get(`${process.env.BTC_NODE_URL}/tx/address/${bech32Address}`);
+
+    return response.data;
+  } catch (e) {
+    log.error('Error getTransactionByAddress', {
+      error: e,
+      bech32Address,
+      url: process.env.BTC_NODE_URL,
+    });
+  }
+};
+
 export const getTxByParams = async (params: { btcAddress: string; value: string }) => {
   try {
     const bech32Address = getBech32FromHex(params.btcAddress);
@@ -72,7 +99,7 @@ export const getTransactionByHash = async (transactionHash: string) => {
 };
 
 const options = {
-  network: process.env.HMY_NETWORK,
+  network: 'testnet',
   port: 80,
   apiKey: 'api-key',
   host: process.env.BTC_NODE_URL,
@@ -85,10 +112,10 @@ export const getMerkleProof = async (hash: string, height: number) => {
   return merkleProofRes[0].map(value => Buffer.from(value, 'hex').toString('hex')).join('');
 };
 
-export const searchTxByHex = async (params: { addrHex: string; txHex: string }) => {
-  const bech32Address = getBech32FromHex(params.addrHex);
-
-  const response = await axios.get(`${process.env.BTC_NODE_URL}/tx/address/${bech32Address}`);
+export const searchTxByHex = async (params: { bech32Address: string; txHex: string }) => {
+  const response = await axios.get(
+    `${process.env.BTC_NODE_URL}/tx/address/${params.bech32Address}`
+  );
 
   return response.data.find(item => item.hex === params.txHex);
 };

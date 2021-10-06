@@ -50,11 +50,13 @@
     "eth-ens-namehash": "^2.0.8",
     "express": "^4.17.1",
     "firebase-admin": "^9.2.0",
+    "keccak256": "^1.0.3",
     "lodash": "^4.17.20",
     "lodash.get": "^4.4.2",
     "moment": "^2.29.0",
     "mongodb": "^4.1.2",
     "request": "^2.88.2",
+    "tiny-secp256k1": "^1.1.6",
     "web3": "^1.3.0",
     "zerg": "^2.1.2"
   },
