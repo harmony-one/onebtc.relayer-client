@@ -105,7 +105,12 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   };
 
   createOperation = async (params: IOperationInitParams) => {
-    await this.validateOperationBeforeCreate(params);
+    // await this.validateOperationBeforeCreate(params);
+
+    if (this.operations.find(o => o.id === params.id && o.status === STATUS.SUCCESS)) {
+      log.info('Operation already completed', { params });
+      return;
+    }
 
     log.info('Start new operation', { params });
 
