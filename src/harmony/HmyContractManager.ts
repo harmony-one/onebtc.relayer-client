@@ -46,7 +46,7 @@ export class HmyContractManager {
     const hexForTxId = tx.__toBuffer().toString('hex');
 
     const res = await this.contract.methods
-      .executeIssue(
+      .executeRedeem(
         params.requester,
         params.redeemId,
         '0x' + proof,
