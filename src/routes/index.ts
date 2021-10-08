@@ -231,4 +231,13 @@ export const routes = (app, services: IServices) => {
       res.send(JSON.stringify(data, null, 4));
     })
   );
+
+  app.post(
+    '/monitor/ping',
+    asyncHandler(async (req, res) => {
+      await services.vaults.ping(req.body.vault);
+
+      res.send(JSON.stringify({ status: true }, null, 4));
+    })
+  );
 };

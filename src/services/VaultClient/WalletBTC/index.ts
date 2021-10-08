@@ -11,11 +11,11 @@ import {
   searchTxByHex,
 } from '../../../bitcoin/rpc';
 import { IssueRequest } from '../../common';
-import { getBech32FromHex } from '../../../bitcoin/helpers';
 import { Buffer } from 'buffer';
 import { derivate } from './derivate';
 import { getActualOutputs } from './helpers';
 import { sleep } from '../../../utils';
+import { ActionsQueue } from './ActionsQueue';
 const log = logger.module('WalletBTC:main');
 
 export interface IWalletBTC {
@@ -36,10 +36,12 @@ interface IFreeOutput {
 export class WalletBTC {
   services: IServices;
   vaultId: string;
+  queue: ActionsQueue;
 
   constructor(params: IWalletBTC) {
     this.services = params.services;
     this.vaultId = params.vaultId;
+    this.queue = new ActionsQueue();
   }
 
   getAmountFromTx = (txObj: any, address: string) => {
@@ -98,6 +100,15 @@ export class WalletBTC {
     return freeOutputs;
   };
 
+  sendTxSafe = (params: { amount: string; to: string; id: string }) =>
+    new Promise<{ status: boolean; transactionHash: string }>((resolve, reject) =>
+      this.queue.addAction({
+        func: async () => await this.sendTx(params),
+        resolve,
+        reject,
+      })
+    );
+
   sendTx = async (params: { amount: string; to: string; id: string }) => {
     const toBech32Address = bitcoin.address.toBech32(
       Buffer.from(params.to.slice(2), 'hex'),
@@ -136,7 +147,7 @@ export class WalletBTC {
     psbt.setLocktime(0); // These are defaults. This line is not needed.
 
     const networkFee = await getNetworkFee();
-    const fee = Math.max(networkFee, 1000);
+    const fee = Math.max(networkFee, Number(process.env.BTC_MIN_RATE));
 
     const freeOutputs = await this.getFreeOutputs(Number(params.amount) + fee);
 

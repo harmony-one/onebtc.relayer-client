@@ -1,3 +1,5 @@
+import { rpcErrorMessage } from './helpers';
+
 const BN = require('bn.js');
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
@@ -5,6 +7,7 @@ const bitcoin = require('bitcoinjs-lib');
 import { getBlockByHeight, getMerkleProof, getTransactionByHash } from '../bitcoin/rpc';
 
 import logger from '../logger';
+import { sleep } from '../utils';
 const log = logger.module('HmyContractManager:main');
 
 export interface IHmyContractManager {
@@ -45,23 +48,34 @@ export class HmyContractManager {
     const tx = bitcoin.Transaction.fromHex(hex);
     const hexForTxId = tx.__toBuffer().toString('hex');
 
-    const res = await this.contract.methods
-      .executeRedeem(
-        params.requester,
-        params.redeemId,
-        '0x' + proof,
-        '0x' + hexForTxId,
-        height,
-        index,
-        '0x' + block.toHex()
-      )
-      .send({
-        from: this.masterAddress,
-        gas: process.env.HMY_GAS_LIMIT,
-        gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
-      });
+    try {
+      return await this.contract.methods
+        .executeRedeem(
+          params.requester,
+          params.redeemId,
+          '0x' + proof,
+          '0x' + hexForTxId,
+          height,
+          index,
+          '0x' + block.toHex()
+        )
+        .send({
+          from: this.masterAddress,
+          gas: process.env.HMY_GAS_LIMIT,
+          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
+        });
+    } catch (e) {
+      if (rpcErrorMessage(e)) {
+        // log.error('executeRedeemHmy exception rpcErrorMessage', { params, error: e });
+        log.info('executeRedeemHmy rpc error - another attempt in 10s ...');
 
-    return res;
+        await sleep(10000);
+
+        return await this.executeRedeemHmy(params);
+      } else {
+        throw e;
+      }
+    }
   };
 
   getVaultInfo = async () => {
@@ -86,12 +100,25 @@ export class HmyContractManager {
     if (!vault) {
       const value = this.web3.utils.toWei(collateral);
 
-      await this.contract.methods.registerVault(pubX, pubY).send({
-        from: this.masterAddress,
-        gas: process.env.HMY_GAS_LIMIT,
-        gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
-        value,
-      });
+      try {
+        await this.contract.methods.registerVault(pubX, pubY).send({
+          from: this.masterAddress,
+          gas: process.env.HMY_GAS_LIMIT,
+          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
+          value,
+        });
+      } catch (e) {
+        if (rpcErrorMessage(e)) {
+          // log.error('register exception rpcErrorMessage', { collateral, pubX, pubY, error: e });
+          log.info('register rpc error - another attempt in 10s ...');
+
+          await sleep(10000);
+
+          return await this.register(collateral, pubX, pubY);
+        } else {
+          throw e;
+        }
+      }
 
       vault = await this.getVaultInfo();
     }

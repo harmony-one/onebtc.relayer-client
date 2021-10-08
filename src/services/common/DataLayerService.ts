@@ -3,7 +3,7 @@ import { Contract } from 'web3-eth-contract';
 import { DBService } from '../database';
 
 import logger from '../../logger';
-import {clear} from "../../utils";
+import { clear } from '../../utils';
 const log = logger.module('CommonEntityService:main');
 
 export interface ILogEventsService {

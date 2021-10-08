@@ -16,7 +16,7 @@ export const redeem = (
   const transferBTC = new Action({
     type: ACTION_TYPE.transferBTC,
     callFunction: () =>
-      wallet.sendTx({
+      wallet.sendTxSafe({
         to: params.btcAddress,
         amount: params.amount,
         id: params.id,

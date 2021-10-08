@@ -37,7 +37,7 @@ export class Operation {
 
   syncOperationCallback: TSyncOperationCallback;
 
-  asyncConstructor = async (
+  asyncConstructor = (
     params: IOperationInitParams,
     callback: TSyncOperationCallback,
     wallet: WalletBTC,
