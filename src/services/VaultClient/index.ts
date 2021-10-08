@@ -14,6 +14,7 @@ import { HmyContractManager } from '../../harmony/HmyContractManager';
 import logger from '../../logger';
 import { bn } from '../../utils';
 import { Buffer } from 'buffer';
+import axios from 'axios';
 
 const bitcoin = require('bitcoinjs-lib');
 
@@ -78,18 +79,22 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
       this.status = RELAYER_STATUS.LAUNCHED;
 
+      setInterval(this.pingDashboard, 30000);
+
       log.info(`Start Vault Client - ok`);
+
+      await this.loadOperationsFromDB();
     } catch (e) {
       log.error(`Start Vault Client - failed`, { error: e });
       // throw new Error(`Start Vault Client: ${e.message}`);
     }
   }
 
-  isClientVault = (vaultId: string) =>
+  isCorrectVault = (vaultId: string) =>
     vaultId.toLowerCase() === this.hmyContractManager.masterAddress.toLowerCase();
 
   onIssueRequest = async (data: IssueRequestEvent) => {
-    if (this.isClientVault(data.returnValues.vaultId)) {
+    if (this.isCorrectVault(data.returnValues.vaultId)) {
     }
   };
 
@@ -97,27 +102,44 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     return await this.updateOrCreateData(operation.toObject({ payload: true }));
   };
 
-  validateOperationBeforeCreate = async (params: IOperationInitParams) => {
-    if (this.operations.find(o => o.id === params.id && o.status === STATUS.SUCCESS)) {
-      log.error('Operation already completed', { params });
-      throw new Error('This operation already created');
-    }
+  loadOperationsFromDB = async () => {
+    const res = await this.getData({
+      size: 1000,
+      page: 0,
+      filter: { status: 'in_progress' },
+      sort: { timestamp: -1 },
+    });
+
+    res.content.forEach(params => {
+      log.info('Restore operation', {
+        id: params.id,
+        type: params.type,
+        btcAddress: params.btcAddress,
+        vault: params.vault,
+        requester: params.requester,
+        amount: params.amount,
+      });
+
+      const operation = new Operation();
+
+      operation.asyncConstructor(
+        params,
+        this.saveOperationToDB,
+        this.walletBTC,
+        this.hmyContractManager
+      );
+
+      this.operations.push(operation);
+    });
   };
 
   createOperation = async (params: IOperationInitParams) => {
-    // await this.validateOperationBeforeCreate(params);
-    const oldOperation = this.operations.find(o => o.id === params.id);
-
-    if (oldOperation && oldOperation.status === STATUS.SUCCESS) {
-      log.info('Operation already completed', { params });
+    if (this.operations.find(o => o.id === params.id)) {
+      // log.error('Operation already created', { params });
       return;
     }
 
-    if (oldOperation) {
-      log.info('Restart operation', { status: oldOperation.status, id: oldOperation.id });
-    } else {
-      log.info('Start new operation', { params });
-    }
+    log.info('Start new operation', { params });
 
     const operation = new Operation();
 
@@ -143,7 +165,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   };
 
   addRedeem = async (redeem: RedeemRequest) => {
-    if (this.isClientVault(redeem.vault) && redeem.status === '1') {
+    if (this.isCorrectVault(redeem.vault) && redeem.status === '1') {
       await this.createOperation({
         id: redeem.id,
         type: OPERATION_TYPE.REDEEM,
@@ -188,5 +210,15 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     const pubY = bn(vaultEcPair.publicKey.slice(33, 65));
 
     return await this.hmyContractManager.register(collateral, pubX, pubY);
+  };
+
+  pingDashboard = async () => {
+    try {
+      await axios.post(`${process.env.DASHBOARD_URL}/monitor/ping`, {
+        vault: this.hmyContractManager.masterAddress,
+      });
+    } catch (e) {
+      // log.error('Error ping dashboard', { error: e });
+    }
   };
 }

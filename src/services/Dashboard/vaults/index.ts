@@ -76,4 +76,8 @@ export class VaultsService extends DataLayerService<IVaultRegistry> {
 
     setTimeout(this.syncVaults, this.waitInterval);
   };
+
+  ping = async (vault: string) => {
+    await this.updateOrCreateData({ id: vault, lastPing: Date.now() } as any);
+  };
 }

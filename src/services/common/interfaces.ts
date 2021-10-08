@@ -50,6 +50,7 @@ export interface IVaultRegistry {
   toBeRedeemed: string;
   replaceCollateral: string;
   toBeReplaced: string;
+  lastPing?: number;
 }
 
 export interface IssueRequest {
