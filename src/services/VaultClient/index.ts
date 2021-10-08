@@ -218,7 +218,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
         vault: this.hmyContractManager.masterAddress,
       });
     } catch (e) {
-      log.error('Error ping dashboard', { error: e });
+      // log.error('Error ping dashboard', { error: e });
     }
   };
 }
