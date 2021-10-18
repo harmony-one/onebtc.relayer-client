@@ -76,7 +76,7 @@ export class HistoryService extends DataLayerService<any> {
 
   syncOperations = async (config: ISyncConfig) => {
     try {
-      // await this.waitFullSync();
+      await this.waitFullSync();
 
       let current = config.lastSyncDate;
 
