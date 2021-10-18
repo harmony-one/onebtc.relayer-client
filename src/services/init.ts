@@ -5,6 +5,7 @@ import { abi as relayAbi } from '../abi/Relay';
 import { LogEvents, IssueService, VaultsService } from './Dashboard';
 import { RelayerClient } from './Relayer';
 import { VaultClient } from './VaultClient';
+import { HistoryService } from './History';
 
 export interface IServices {
   relayerClient?: RelayerClient;
@@ -15,6 +16,7 @@ export interface IServices {
   vaults?: VaultsService;
   issues?: IssueService;
   redeems?: IssueService;
+  history?: HistoryService;
 }
 
 export const InitServices = async (): Promise<IServices> => {
@@ -102,6 +104,17 @@ export const InitServices = async (): Promise<IServices> => {
   });
 
   await services.relayEvents.start();
+
+  services.history = new HistoryService({
+    database: databaseService,
+    dbCollectionPrefix: 'history',
+    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
+    contractAbi: oneBtcAbi,
+    services,
+    eventEmitter,
+  });
+
+  await services.history.start();
 
   return services;
 };

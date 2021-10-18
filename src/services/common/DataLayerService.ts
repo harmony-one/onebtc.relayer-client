@@ -73,14 +73,15 @@ export class DataLayerService<T> {
 
   getData = async (params: {
     id?: string;
-    size: number;
-    page: number;
+    size?: number;
+    page?: number;
     filter?: Record<string, any>;
     sort?: Record<string, any>;
+    collectionName?: string;
   }) => {
-    const collectionName = `${this.dbCollectionPrefix}_data`;
+    const collectionName = params.collectionName || `${this.dbCollectionPrefix}_data`;
 
-    const from = params.page * params.size;
+    const from = (params.page || 0) * (params.size || 0);
 
     const filter = params.filter && clear(params.filter);
 
@@ -89,7 +90,7 @@ export class DataLayerService<T> {
     const data = await this.database.getCollectionData(
       collectionName,
       params.sort,
-      Number(params.size),
+      Number(params.size || 0),
       from,
       params.id ? { id: params.id } : filter
     );
@@ -97,9 +98,9 @@ export class DataLayerService<T> {
     return {
       content: data,
       totalElements: total,
-      totalPages: Math.ceil(total / params.size),
-      size: params.size,
-      page: params.page,
+      totalPages: params.size ? Math.ceil(total / params.size) : 1,
+      size: params.size || 0,
+      page: params.page || 0,
     };
   };
 

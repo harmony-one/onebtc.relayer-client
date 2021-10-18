@@ -240,4 +240,23 @@ export const routes = (app, services: IServices) => {
       res.send(JSON.stringify({ status: true }, null, 4));
     })
   );
+
+  app.get(
+    '/history/:collection',
+    asyncHandler(async (req, res) => {
+      const { size = 50, page = 0, step = 'h' } = req.query;
+      const { collection } = req.params;
+
+      const data = await services.history.getHistoryData(
+        {
+          size,
+          page,
+          collectionName: `history_${collection}`,
+        },
+        step
+      );
+
+      res.send(data);
+    })
+  );
 };
