@@ -30,7 +30,7 @@ export class DBService {
   };
 
   public insert = async (collectionName: string, data) => {
-    if(!this.isInit) return;
+    if (!this.isInit) return;
 
     let collection = this.db.collection(collectionName);
 
@@ -42,7 +42,7 @@ export class DBService {
   };
 
   public insertMany = async (collectionName: string, data: any[]) => {
-    if(!this.isInit) return;
+    if (!this.isInit) return;
 
     let collection = this.db.collection(collectionName);
 
@@ -54,7 +54,7 @@ export class DBService {
   };
 
   public update = async (collectionName: string, filter: Record<string, any>, data: any) => {
-    if(!this.isInit) return;
+    if (!this.isInit) return;
 
     let collection = this.db.collection(collectionName);
 
@@ -66,7 +66,7 @@ export class DBService {
   };
 
   public getCollectionCount = async (collectionName: string, filter?: Record<string, any>) => {
-    if(!this.isInit) return 0;
+    if (!this.isInit) return 0;
 
     try {
       let collection = this.db.collection(collectionName);
@@ -80,7 +80,7 @@ export class DBService {
   };
 
   public find = async (collectionName: string, filter: Record<string, any>) => {
-    if(!this.isInit) return null;
+    if (!this.isInit) return null;
 
     let collection = this.db.collection(collectionName);
 
@@ -94,16 +94,20 @@ export class DBService {
   public getCollectionData = async (
     collectionName: string,
     sort: Record<string, any> = null,
-    limit = 100,
+    limit,
     skip = 0,
     filter: Record<string, any> = null
   ): Promise<any> => {
-    if(!this.isInit) return [];
+    if (!this.isInit) return [];
 
     try {
       let collection = this.db.collection(collectionName);
 
-      return await collection.find(filter).sort(sort).limit(limit).skip(skip).toArray();
+      if (!limit) {
+        return await collection.find(filter).sort(sort).toArray();
+      } else {
+        return await collection.find(filter).sort(sort).limit(limit).skip(skip).toArray();
+      }
     } catch (e) {
       log.error('Error getCollectionData', { error: e });
 
