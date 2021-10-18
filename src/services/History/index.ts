@@ -103,7 +103,7 @@ export class HistoryService extends DataLayerService<any> {
         await this.database.update(
           collection,
           { date },
-          { amountPerDay, totalIssued: config.totalAmount, date }
+          { amountPerDay, total: config.totalAmount, date }
         );
 
         current = end;
