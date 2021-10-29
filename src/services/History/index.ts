@@ -82,6 +82,11 @@ export class HistoryService extends DataLayerService<any> {
 
       if (!current) {
         const res = await config.getData({ size: 1, sort: { opentime: 1 } });
+
+        if(!res.content[0]) {
+          return;
+        }
+
         const firstIssueTime = res.content[0].opentime * 1000;
         current = moment.utc(moment(firstIssueTime).format('YYYY-MM-DD')).unix();
       }
