@@ -14,7 +14,8 @@ export const getContractDeploymentBlock = async (address): Promise<number> => {
     return Number(contract.data.blockNumber);
   } catch (e) {
     log.error('Error fetch contract creationDate', { error: e });
-    throw new Error(`Contract not found ${address}`);
+    // throw new Error(`Contract not found ${address}`);
+    return 16919467;
   }
 };
 
