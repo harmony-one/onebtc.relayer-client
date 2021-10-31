@@ -108,6 +108,6 @@ export interface IssueRequestEvent extends IEvent {
 
 export enum CONTRACT_EVENT {
   RegisterVault = 'RegisterVault',
-  RedeemRequest = 'RedeemRequest',
-  IssueRequest = 'IssueRequest',
+  RedeemRequest = 'RedeemRequested',
+  IssueRequest = 'IssueRequested',
 }
