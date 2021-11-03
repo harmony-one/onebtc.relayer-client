@@ -112,3 +112,7 @@ artifacts/
 
 package-lock.json
 yarn.lock
+.idea
+
+# docker-compose
+mongodb
