@@ -19,6 +19,14 @@ export const routes = (app, services: IServices) => {
   );
 
   app.get(
+    '/oracle/info',
+    asyncHandler(async (req, res) => {
+      const data = await services.oracleClient.getInfo();
+      return res.json(data);
+    })
+  );
+
+  app.get(
     '/relay/events/info',
     asyncHandler(async (req, res) => {
       const data = await services.relayEvents.getInfo();

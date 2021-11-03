@@ -6,9 +6,11 @@ import { LogEvents, IssueService, VaultsService } from './Dashboard';
 import { RelayerClient } from './Relayer';
 import { VaultClient } from './VaultClient';
 import { HistoryService } from './History';
+import {OracleClient} from "./OracleClient";
 
 export interface IServices {
   relayerClient?: RelayerClient;
+  oracleClient?: OracleClient;
   vaultClient?: VaultClient;
   database?: DBService;
   onebtcEvents?: LogEvents;
@@ -34,6 +36,16 @@ export const InitServices = async (): Promise<IServices> => {
 
   if (process.env.HMY_RELAY_PRIVATE_KEY) {
     await services.relayerClient.start();
+  }
+
+  services.oracleClient = new OracleClient({
+    database: databaseService,
+    dbCollectionName: 'oracle',
+    oracleContractAddress: process.env.HMY_ORACLE_CONTRACT,
+  });
+
+  if (process.env.HMY_ORACLE_PRIVATE_KEY) {
+    await services.oracleClient.start();
   }
 
   services.vaultClient = new VaultClient({
