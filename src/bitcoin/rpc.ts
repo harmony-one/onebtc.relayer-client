@@ -165,7 +165,7 @@ export const findTxByRedeemId = async (params: { btcAddress: string; id: string 
   const toBech32Address = bitcoin.address.toBech32(
     Buffer.from(params.btcAddress.slice(2), 'hex'),
     0,
-    'tb'
+    process.env.BTC_TC_PREFIX
   );
 
   const emb = bitcoin.payments.embed({ data: [new BN(params.id).toBuffer()] });

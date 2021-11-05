@@ -78,7 +78,7 @@ export class WalletBTC {
       const bech32Address = bitcoin.address.toBech32(
         Buffer.from(issue.btcAddress.slice(2), 'hex'),
         0,
-        'tb'
+          process.env.BTC_TC_PREFIX
       );
       const txs = await getTxsByAddress(bech32Address);
       let outputs = getActualOutputs(txs, bech32Address);
@@ -113,7 +113,7 @@ export class WalletBTC {
     const toBech32Address = bitcoin.address.toBech32(
       Buffer.from(params.to.slice(2), 'hex'),
       0,
-      'tb'
+        process.env.BTC_TC_PREFIX
     );
 
     const emb = bitcoin.payments.embed({ data: [new BN(params.id).toBuffer()] });
