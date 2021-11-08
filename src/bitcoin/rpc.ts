@@ -39,9 +39,11 @@ export const getHeight = async () => {
 
 export const getNetworkFee = async () => {
   try {
-    const res = await axios.get(`${process.env.BTC_NODE_URL}/fee`);
+    const res = await getTxFee();
+    return Math.round(res);
+    // const res = await axios.get(`${process.env.BTC_NODE_URL}/fee`);
 
-    return Number(res.data.rate);
+    // return Number(res.data.rate);
   } catch (e) {
     log.error('Error getNetworkFee', {
       error: e,
@@ -174,4 +176,11 @@ export const findTxByRedeemId = async (params: { btcAddress: string; id: string 
     bech32Address: toBech32Address,
     script: emb.output.toString('hex'),
   });
+};
+
+export const getTxFee = async () => {
+  const response = await axios.get(`https://api.blockcypher.com/v1/btc/main`);
+  const fee_per_kb = response.data.medium_fee_per_kb;
+
+  return fee_per_kb / 2;
 };
