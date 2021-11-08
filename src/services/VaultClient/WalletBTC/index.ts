@@ -78,7 +78,7 @@ export class WalletBTC {
       const bech32Address = bitcoin.address.toBech32(
         Buffer.from(issue.btcAddress.slice(2), 'hex'),
         0,
-          process.env.BTC_TC_PREFIX
+        process.env.BTC_TC_PREFIX
       );
       const txs = await getTxsByAddress(bech32Address);
       let outputs = getActualOutputs(txs, bech32Address);
@@ -113,7 +113,7 @@ export class WalletBTC {
     const toBech32Address = bitcoin.address.toBech32(
       Buffer.from(params.to.slice(2), 'hex'),
       0,
-        process.env.BTC_TC_PREFIX
+      process.env.BTC_TC_PREFIX
     );
 
     const emb = bitcoin.payments.embed({ data: [new BN(params.id).toBuffer()] });
@@ -140,7 +140,8 @@ export class WalletBTC {
     // search the same tx -- end
 
     const psbt = new bitcoin.Psbt({
-      network: bitcoin.networks.testnet,
+      network:
+        process.env.HMY_NETWORK === 'testnet' ? bitcoin.networks.testnet : bitcoin.networks.bitcoin,
     });
 
     psbt.setVersion(2); // These are defaults. This line is not needed.
