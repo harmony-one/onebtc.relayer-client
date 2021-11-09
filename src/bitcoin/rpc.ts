@@ -180,6 +180,6 @@ export const findTxByRedeemId = async (params: { btcAddress: string; id: string 
 
 export const getTxFee = async () => {
   const response = await axios.get('https://bitcoiner.live/api/fees/estimates/latest');
-  const fee = response.data.estimates[30].total.p2wpkh.satoshi;
+  const fee = response.data.estimates[30].total.p2pkh.satoshi;
   return Math.round(fee);
 };
