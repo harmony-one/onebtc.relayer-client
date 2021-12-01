@@ -54,26 +54,20 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
   async start() {
     try {
-      if (process.env.HMY_VAULT_PRIVATE_KEY) {
-        this.hmyContractManager = new HmyContractManager({
-          hmyPrivateKey: process.env.HMY_VAULT_PRIVATE_KEY,
-          contractAddress: this.contractAddress,
-          contractAbi: this.contractAbi,
-          nodeUrl: process.env.HMY_NODE_URL,
-        });
-      } else {
-        throw new Error('HMY_VAULT_PRIVATE_KEY not found');
-      }
+      this.hmyContractManager = new HmyContractManager({
+        contractAddress: this.contractAddress,
+        contractAbi: this.contractAbi,
+        nodeUrl: process.env.HMY_NODE_URL,
+      });
 
-      if (process.env.BTC_VAULT_PRIVATE_KEY) {
-        this.walletBTC = new WalletBTC({
-          services: this.services,
-          vaultId: this.hmyContractManager.masterAddress,
-          btcPrivateKey: process.env.BTC_VAULT_PRIVATE_KEY,
-        });
-      } else {
-        throw new Error('BTC_VAULT_PRIVATE_KEY not found');
-      }
+      await this.hmyContractManager.init();
+
+      this.walletBTC = new WalletBTC({
+        services: this.services,
+        vaultId: this.hmyContractManager.masterAddress,
+      });
+
+      await this.walletBTC.init();
 
       this.eventEmitter.on(`ADD_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
 
@@ -202,7 +196,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
   register = async (collateral: string) => {
     const vaultEcPair = bitcoin.ECPair.fromPrivateKey(
-      Buffer.from(process.env.BTC_VAULT_PRIVATE_KEY, 'hex'),
+      Buffer.from(this.walletBTC.btcPrivateKey, 'hex'),
       { compressed: false }
     );
 

@@ -16,12 +16,12 @@ import { derivate } from './derivate';
 import { getActualOutputs } from './helpers';
 import { sleep } from '../../../utils';
 import { ActionsQueue } from './ActionsQueue';
+import { getSecretKeyAWS } from '../../../harmony/utils';
 const log = logger.module('WalletBTC:main');
 
 export interface IWalletBTC {
   services: IServices;
   vaultId: string;
-  btcPrivateKey: string;
 }
 
 interface IFreeOutput {
@@ -37,12 +37,17 @@ export class WalletBTC {
   services: IServices;
   vaultId: string;
   queue: ActionsQueue;
+  btcPrivateKey: string;
 
   constructor(params: IWalletBTC) {
     this.services = params.services;
     this.vaultId = params.vaultId;
     this.queue = new ActionsQueue();
   }
+
+  init = async () => {
+    this.btcPrivateKey = await getSecretKeyAWS('btc-secret');
+  };
 
   getAmountFromTx = (txObj: any, address: string) => {
     const output = txObj.outputs.find(out => out.address === address);
@@ -182,7 +187,7 @@ export class WalletBTC {
     });
 
     freeOutputs.forEach((output, idx) => {
-      const vaultEcPair = derivate(process.env.BTC_VAULT_PRIVATE_KEY, output.id);
+      const vaultEcPair = derivate(this.btcPrivateKey, output.id);
 
       psbt.signInput(idx, vaultEcPair);
       psbt.validateSignaturesOfInput(idx);

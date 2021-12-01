@@ -5,13 +5,13 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 const bitcoin = require('bitcoinjs-lib');
 import { getBlockByHeight, getMerkleProof, getTransactionByHash } from '../bitcoin/rpc';
+import { sleep } from '../utils';
 
 import logger from '../logger';
-import { sleep } from '../utils';
+import { getSecretKeyAWS } from './utils';
 const log = logger.module('HmyContractManager:main');
 
 export interface IHmyContractManager {
-  hmyPrivateKey: string;
   contractAddress: string;
   contractAbi: any;
   nodeUrl: string;
@@ -21,18 +21,25 @@ export class HmyContractManager {
   web3: Web3;
   contract: Contract;
   masterAddress: string;
+  contractAddress: string;
+  contractAbi: any;
 
   constructor(params: IHmyContractManager) {
-    const web3Hmy = new Web3(params.nodeUrl);
-    this.web3 = web3Hmy;
+    this.web3 = new Web3(params.nodeUrl);
+    this.contractAbi = params.contractAbi;
+    this.contractAddress = params.contractAddress;
+  }
 
-    const ethMasterAccount = web3Hmy.eth.accounts.privateKeyToAccount(params.hmyPrivateKey);
-    web3Hmy.eth.accounts.wallet.add(ethMasterAccount);
-    web3Hmy.eth.defaultAccount = ethMasterAccount.address;
+  init = async () => {
+    const hmyPrivateKey = await getSecretKeyAWS('hmy-secret');
+
+    const ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(hmyPrivateKey);
+    this.web3.eth.accounts.wallet.add(ethMasterAccount);
+    this.web3.eth.defaultAccount = ethMasterAccount.address;
 
     this.masterAddress = ethMasterAccount.address;
-    this.contract = new web3Hmy.eth.Contract(params.contractAbi, params.contractAddress);
-  }
+    this.contract = new this.web3.eth.Contract(this.contractAbi, this.contractAddress);
+  };
 
   executeRedeemHmy = async (params: {
     transactionHash: string;
