@@ -1,5 +1,6 @@
 import { MongoClient, Db } from 'mongodb';
 import logger from '../../logger';
+import { sleep } from '../../utils';
 const log = logger.module('Database:mongo');
 
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -24,8 +25,14 @@ export class DBService {
       }
 
       this.isInit = true;
+
+      log.info(`Start Database Service - ok`);
     } catch (e) {
       log.error('Error init DBService', { error: e });
+
+      await sleep(5000);
+
+      return await this.init();
     }
   };
 

@@ -46,7 +46,15 @@ export class WalletBTC {
   }
 
   init = async () => {
-    this.btcPrivateKey = await getSecretKeyAWS('btc-secret');
+    this.btcPrivateKey = process.env.BTC_VAULT_PRIVATE_KEY;
+
+    if (!this.btcPrivateKey) {
+      this.btcPrivateKey = await getSecretKeyAWS('btc-secret');
+    }
+
+    if (!this.btcPrivateKey) {
+      throw new Error('BTC_VAULT_PRIVATE_KEY not found');
+    }
   };
 
   getAmountFromTx = (txObj: any, address: string) => {

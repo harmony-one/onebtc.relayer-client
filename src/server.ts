@@ -4,7 +4,8 @@ require('../env');
 import express from 'express';
 import cors from 'cors';
 import { routes } from './routes';
-import { InitServices } from './services/init';
+import { InitServices, IServices } from './services/init';
+import { InitVault } from './services/init_vault';
 import bodyParser from 'body-parser';
 
 const startServer = async () => {
@@ -19,7 +20,13 @@ const startServer = async () => {
   app.use(bodyParser.json()); // to support JSON-encoded bodies
 
   // Init services
-  const services = await InitServices();
+  let services: IServices;
+
+  if (process.env.MODE === 'vault') {
+    services = await InitVault();
+  } else {
+    services = await InitServices();
+  }
 
   // Init routes
   routes(app, services);

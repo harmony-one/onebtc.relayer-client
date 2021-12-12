@@ -17,7 +17,7 @@ const getAwsConfig = () => {
 
 export const awsKMS = getAwsConfig();
 
-const encryptedDir = './encrypted';
+const encryptedDir = './keys';
 type TSecretFileName = 'hmy-secret' | 'btc-secret';
 
 export const getSecretKeyAWS = (secretFileName: TSecretFileName) => {

@@ -31,7 +31,15 @@ export class HmyContractManager {
   }
 
   init = async () => {
-    const hmyPrivateKey = await getSecretKeyAWS('hmy-secret');
+    let hmyPrivateKey = process.env.HMY_VAULT_PRIVATE_KEY;
+
+    if (!hmyPrivateKey) {
+      hmyPrivateKey = await getSecretKeyAWS('hmy-secret');
+    }
+
+    if (!hmyPrivateKey) {
+      throw new Error('HMY_VAULT_PRIVATE_KEY not found');
+    }
 
     const ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(hmyPrivateKey);
     this.web3.eth.accounts.wallet.add(ethMasterAccount);
