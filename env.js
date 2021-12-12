@@ -12,9 +12,11 @@ if (!process.env.NODE_ENV) {
   console.warn('NODE ENV is not specified. Set to production');
 }
 
-var dotenvFiles = [`${resolveApp('.env')}.${NODE_ENV}`, resolveApp('./keys/.env.private')].filter(
-  Boolean
-);
+var dotenvFiles = [
+  `${resolveApp('.env')}.${NODE_ENV}`,
+  resolveApp('.env.private'),
+  resolveApp('./keys/.env.private'),
+].filter(Boolean);
 
 console.log('dotenvFiles', dotenvFiles);
 
