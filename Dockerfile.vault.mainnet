@@ -1,0 +1,20 @@
+FROM node:14
+
+WORKDIR /app
+
+ENV NODE_ENV mainnet
+ENV MODE vault
+
+COPY ./src /app/src
+COPY ./frontend /app/frontend
+COPY package.json /app/package.json
+COPY package-lock.json /app/package-lock.json
+COPY env.js /app/env.js
+COPY tsconfig.json /app/tsconfig.json
+COPY .env.mainnet /app/.env.mainnet
+COPY proxy.js /app/proxy.js
+COPY start.sh /app/start.sh
+
+RUN npm i && npm run build
+
+CMD sh ./start.sh

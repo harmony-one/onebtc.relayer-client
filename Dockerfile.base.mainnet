@@ -3,10 +3,9 @@ FROM node:14
 WORKDIR /app
 
 ENV NODE_ENV mainnet
-ENV MODE vault
+ENV MODE base
 
 COPY ./src /app/src
-COPY ./frontend /app/frontend
 COPY package.json /app/package.json
 COPY package-lock.json /app/package-lock.json
 COPY env.js /app/env.js
@@ -16,6 +15,5 @@ COPY proxy.js /app/proxy.js
 COPY start.sh /app/start.sh
 
 RUN npm i && npm run build
-RUN npm i -g serve
 
 CMD sh ./start.sh
