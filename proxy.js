@@ -5,6 +5,10 @@ const proxy = require('express-http-proxy');
 const path = require('path');
 const cors = require('cors');
 
+if(process.env.MODE !== 'vault') {
+  return;
+}
+
 const app = express();
 
 app.use(cors());
