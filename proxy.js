@@ -29,6 +29,10 @@ rootRouter.get('/details', async (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 
+rootRouter.get('/registration', async (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
+
 app.use(rootRouter);
 
 const UI_PORT = process.env.UI_PORT || 3000;
