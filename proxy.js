@@ -6,6 +6,7 @@ const path = require('path');
 const cors = require('cors');
 
 if(process.env.MODE !== 'vault') {
+  // don't support for base services
   return;
 }
 

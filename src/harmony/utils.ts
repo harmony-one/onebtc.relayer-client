@@ -12,7 +12,8 @@ export interface AwsConfig {
 
 const getAwsConfig = () => {
   // [known issue] nodejs sdk won't read the region from the credentials, hence hard coding
-  return new KMS();
+  const region = process.env.AWS_CONFIG_REGION || 'us-west-1';
+  return new KMS({ region });
 };
 
 export const awsKMS = getAwsConfig();
