@@ -6,6 +6,7 @@ const path = require('path');
 const cors = require('cors');
 
 if(process.env.MODE !== 'vault') {
+  // don't support for base services
   return;
 }
 
@@ -26,6 +27,10 @@ rootRouter.get('/', async (req, res) => {
 });
 
 rootRouter.get('/details', async (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
+
+rootRouter.get('/registration', async (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 
