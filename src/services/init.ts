@@ -45,7 +45,7 @@ export const InitServices = async (): Promise<IServices> => {
   });
 
   if (process.env.HMY_ORACLE_PRIVATE_KEY) {
-    await services.oracleClient.start();
+    // await services.oracleClient.start();
   }
 
   services.vaultClient = new VaultClient({
