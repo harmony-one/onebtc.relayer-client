@@ -87,7 +87,7 @@ export class RelayerClient {
         await this.relayContract.methods.submitBlockHeader('0x' + block.toHex(true)).send({
           from: this.ethMasterAccount,
           gas: process.env.HMY_GAS_LIMIT,
-          gasPrice: new BN(this.web3.eth.getGasPrice()).mul(new BN(1)),
+          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
         });
 
         this.btcLastBlock = this.btcLastBlock + 1;
