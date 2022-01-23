@@ -1,3 +1,6 @@
+const bip32 = require('bip32');
+const bitcoin = require('bitcoinjs-lib');
+
 const isUsedInInputs = (txs, output) => {
   return txs.some(tx =>
     tx.inputs.some(input => {
@@ -24,4 +27,36 @@ export const getActualOutputs = (txs: any[], mainAddress: string) => {
   });
 
   return outputsToUse;
+};
+
+const getNetwork = () =>
+  process.env.HMY_NETWORK === 'testnet' ? bitcoin.networks.testnet : bitcoin.networks.bitcoin;
+
+const isBase58 = (key: string) => ['tprv', 'xprv'].includes(key.slice(0, 4));
+
+const isWIF = (key: string) => key.length === 52 || key.length === 51;
+
+const isHex = (key: string) => {
+  const regExp = /[0-9A-Fa-f]{6}/g;
+
+  return regExp.test(key) && key.length === 64;
+};
+
+export const convertBtcKeyToHex = (btcKey: string) => {
+  if (isHex(btcKey)) {
+    return btcKey;
+  }
+
+  if (isBase58(btcKey)) {
+    const bip32Obj = bip32.fromBase58(btcKey, getNetwork());
+
+    return bip32Obj.privateKey.toString('hex');
+  }
+
+  if (isWIF(btcKey)) {
+    const vaultEcPair = bitcoin.ECPair.fromWIF(btcKey, getNetwork());
+    return vaultEcPair.privateKey.toString('hex');
+  }
+
+  throw new Error('BTC KEY Wrong format');
 };

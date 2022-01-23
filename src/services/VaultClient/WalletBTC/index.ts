@@ -13,7 +13,7 @@ import {
 import { IssueRequest } from '../../common';
 import { Buffer } from 'buffer';
 import { derivate } from './derivate';
-import { getActualOutputs } from './helpers';
+import {convertBtcKeyToHex, getActualOutputs} from './helpers';
 import { sleep } from '../../../utils';
 import { ActionsQueue } from './ActionsQueue';
 import { getSecretKeyAWS } from '../../../harmony/utils';
@@ -46,15 +46,17 @@ export class WalletBTC {
   }
 
   init = async () => {
-    this.btcPrivateKey = process.env.BTC_VAULT_PRIVATE_KEY;
+    let btcPrivateKey = process.env.BTC_VAULT_PRIVATE_KEY;
 
-    if (!this.btcPrivateKey) {
-      this.btcPrivateKey = await getSecretKeyAWS('btc-secret');
+    if (!btcPrivateKey) {
+      btcPrivateKey = await getSecretKeyAWS('btc-secret');
     }
 
-    if (!this.btcPrivateKey) {
+    if (!btcPrivateKey) {
       throw new Error('BTC_VAULT_PRIVATE_KEY not found');
     }
+
+    this.btcPrivateKey = convertBtcKeyToHex(btcPrivateKey);
   };
 
   getAmountFromTx = (txObj: any, address: string) => {
