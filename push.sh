@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE=ethhmy-be
+IMAGE=onebtc-vault
 TAG=latest
 NETWORK=
 

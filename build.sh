@@ -28,8 +28,4 @@ if [ -z "$NETWORK" ]; then
    usage
 fi
 
-if [ "$NETWORK" == "mainnet" ]; then
-	sudo docker build -f Dockerfile.be -t ethhmy-be .
-else
-	sudo docker build -f Dockerfile.be."$NETWORK" -t ethhmy-be:"$NETWORK" .
-fi
+sudo docker build -f Dockerfile.vault."$NETWORK" -t  harmonyone/onebtc-vault:"$NETWORK" .
