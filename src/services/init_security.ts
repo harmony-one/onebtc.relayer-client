@@ -2,33 +2,26 @@ import EventEmitter from 'events';
 import { databaseService, DBService } from './database';
 import { abi as oneBtcAbi } from '../abi/OneBtc';
 import { LogEvents, IssueService } from './Dashboard';
-import { VaultClient } from './VaultClient';
+import {SecurityClient} from "./SecurityClient";
+import {RelayerClient} from "./Relayer";
+import {VaultsBlocker} from "./SecurityClient/VaultsBlocker";
 
 export interface IServices {
   database?: DBService;
   onebtcEvents?: LogEvents;
   issues?: IssueService;
   redeems?: IssueService;
-  vaultClient?: VaultClient;
+  securityClient?: SecurityClient;
+  relayer?: RelayerClient;
+  vaultsBlocker?: VaultsBlocker;
 }
 
-export const InitVault = async (): Promise<IServices> => {
+export const InitSecurity = async (): Promise<IServices> => {
   const eventEmitter = new EventEmitter();
 
   await databaseService.init();
 
   const services: IServices = { database: databaseService };
-
-  services.vaultClient = new VaultClient({
-    database: databaseService,
-    dbCollectionPrefix: 'vault-client',
-    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
-    contractAbi: oneBtcAbi,
-    eventEmitter,
-    services,
-  });
-
-  await services.vaultClient.start();
 
   services.issues = new IssueService({
     database: databaseService,
@@ -67,6 +60,27 @@ export const InitVault = async (): Promise<IServices> => {
   });
 
   await services.onebtcEvents.start();
+
+  services.relayer = new RelayerClient({
+    database: databaseService,
+    dbCollectionName: 'relay-headers',
+    relayContractAddress: process.env.HMY_RELAY_CONTRACT,
+    readonly: true
+  });
+
+  await services.relayer.start();
+
+  services.securityClient = new SecurityClient({
+    eventEmitter,
+    database: services.database,
+    onebtcEvents: services.onebtcEvents,
+    issues: services.issues,
+    redeems: services.redeems,
+    relayer: services.relayer,
+    vaultsBlocker: services.vaultsBlocker,
+  });
+
+  await services.securityClient.start();
 
   return services;
 };

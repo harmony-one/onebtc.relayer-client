@@ -1,4 +1,6 @@
 'use strict';
+import { InitSecurity } from './services/init_security';
+
 require('../env');
 
 import express from 'express';
@@ -22,10 +24,16 @@ const startServer = async () => {
   // Init services
   let services: IServices;
 
-  if (process.env.MODE === 'vault') {
-    services = await InitVault();
-  } else {
-    services = await InitServices();
+  switch (process.env.MODE) {
+    case 'vault':
+      services = await InitVault();
+      break;
+    case 'security':
+      services = await InitSecurity();
+      break;
+    default:
+      services = await InitServices();
+      break;
   }
 
   // Init routes

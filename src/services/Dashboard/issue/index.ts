@@ -2,8 +2,11 @@ import EventEmitter = require('events');
 import { DataLayerService, ILogEventsService, IssueRequest, IssueRequestEvent } from '../../common';
 
 import logger from '../../../logger';
-import { findTxByRedeemId, getTxByParams } from '../../../bitcoin/rpc';
+import {findTxByRedeemId, getTxByParams} from '../../../bitcoin/rpc';
 const log = logger.module('Issues:main');
+
+const bitcoin = require('bitcoinjs-lib');
+import BN from 'bn.js';
 
 export interface IIssueService extends ILogEventsService {
   eventEmitter: EventEmitter;
@@ -60,7 +63,11 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
       // TODO: if next string fail - issue will lost
       const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
-      const issue = { ...issueInfo, id };
+
+      const emb = bitcoin.payments.embed({ data: [new BN(id).toBuffer()] });
+      const script = emb.output.toString('hex');
+
+      const issue = { ...issueInfo, id, script };
 
       if (this.listenTxs) {
         switch (this.idEventKey) {

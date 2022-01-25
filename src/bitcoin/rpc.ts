@@ -13,7 +13,7 @@ import { Buffer } from 'buffer';
 import BN from 'bn.js';
 const log = logger.module('BTC-RPC:main');
 
-export const getBlockByHeight = async height => {
+export const getBlockByHeight = async (height) => {
   const response = await axios.get(`${process.env.BTC_NODE_URL}/header/${height}`);
 
   const block = new bitcoin.Block();
@@ -29,6 +29,12 @@ export const getBlockByHeight = async height => {
   block.chainwork = response.data.chainwork;
 
   return block;
+};
+
+export const getFullBlockByHeight = async (height) => {
+  const response = await axios.get(`${process.env.BTC_NODE_URL}/block/${height}`);
+
+  return response.data;
 };
 
 export const getHeight = async () => {
