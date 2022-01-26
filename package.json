@@ -6,7 +6,7 @@
   "main": "src/server.ts",
   "scripts": {
     "start": "node ./dist/server.js",
-    "start:watch": "tsc -w & NODE_ENV=mainnet MODE=vault nodemon -q -w ./dist ./dist/server.js",
+    "start:watch": "tsc -w & nodemon -q -w ./dist ./dist/server.js",
     "start:prod": "node ./dist/server.js",
     "start:mainnet": "NODE_ENV=mainnet node ./dist/server.js",
     "build": "rm -rf ./dist && tsc",
