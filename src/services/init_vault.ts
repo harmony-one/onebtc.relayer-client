@@ -6,6 +6,7 @@ import { RelayerClient } from './Relayer';
 import { VaultClient } from './VaultClient';
 import { HistoryService } from './History';
 import {OracleClient} from "./OracleClient";
+import {VaultSettingService} from "./VaultClient/VaultSettings/VaultSettings";
 
 export interface IServices {
   relayerClient?: RelayerClient;
@@ -18,6 +19,7 @@ export interface IServices {
   issues?: IssueService;
   redeems?: IssueService;
   history?: HistoryService;
+  vaultDbSettings?: VaultSettingService;
 }
 
 export const InitVault = async (): Promise<IServices> => {
@@ -26,6 +28,15 @@ export const InitVault = async (): Promise<IServices> => {
   await databaseService.init();
 
   const services: IServices = { database: databaseService };
+
+  services.vaultDbSettings = new VaultSettingService({
+    database: databaseService,
+    dbCollectionPrefix: 'vaultSettings',
+    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
+    contractAbi: oneBtcAbi,
+  });
+
+  await services.vaultDbSettings.start();
 
   services.vaultClient = new VaultClient({
     database: databaseService,
