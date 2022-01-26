@@ -58,6 +58,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
         contractAddress: this.contractAddress,
         contractAbi: this.contractAbi,
         nodeUrl: process.env.HMY_NODE_URL,
+        database: this.services.database,
       });
 
       await this.hmyContractManager.init();

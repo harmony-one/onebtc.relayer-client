@@ -13,10 +13,10 @@ import {
 import { IssueRequest } from '../../common';
 import { Buffer } from 'buffer';
 import { derivate } from './derivate';
-import {convertBtcKeyToHex, getActualOutputs} from './helpers';
+import { convertBtcKeyToHex, getActualOutputs } from './helpers';
 import { sleep } from '../../../utils';
 import { ActionsQueue } from './ActionsQueue';
-import { getSecretKeyAWS } from '../../../harmony/utils';
+import { loadKey } from '../load-keys';
 const log = logger.module('WalletBTC:main');
 
 export interface IWalletBTC {
@@ -46,15 +46,13 @@ export class WalletBTC {
   }
 
   init = async () => {
-    let btcPrivateKey = process.env.BTC_VAULT_PRIVATE_KEY;
-
-    if (!btcPrivateKey) {
-      btcPrivateKey = await getSecretKeyAWS('btc-secret');
-    }
-
-    if (!btcPrivateKey) {
-      throw new Error('BTC_VAULT_PRIVATE_KEY not found');
-    }
+    const btcPrivateKey = await loadKey({
+      awsKeyFile: 'btc-secret',
+      envKey: 'BTC_VAULT_PRIVATE_KEY',
+      dbKey: 'btcPrivateKey',
+      name: 'BTC',
+      database: this.services.database,
+    });
 
     this.btcPrivateKey = convertBtcKeyToHex(btcPrivateKey);
   };
