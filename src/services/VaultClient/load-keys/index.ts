@@ -2,9 +2,11 @@ import { getSecretKeyAWS } from '../../../harmony/utils';
 import logger from '../../../logger';
 import { DBService } from '../../database';
 import { loadFromStdIn } from './stdin-utils';
+import {loadFromDatabase} from "./database";
+import {IServices} from "../../init";
 const log = logger.module('LoadKeys:main');
 
-enum WALLET_TYPE {
+export enum WALLET_TYPE {
   ENV = 'env',
   AWS = 'aws',
   DATABASE = 'database',
@@ -17,6 +19,7 @@ export const loadKey = async (params: {
   dbKey;
   name;
   database: DBService;
+  services: IServices;
 }): Promise<string> => {
   let secretKey;
 
@@ -32,6 +35,9 @@ export const loadKey = async (params: {
     case WALLET_TYPE.CONSOLE:
       secretKey = await loadFromStdIn(`Please enter your ${params.name} private key`);
       break;
+
+    case WALLET_TYPE.DATABASE:
+      secretKey = await loadFromDatabase(params.dbKey, params.services);
 
     default:
       secretKey = process.env[params.envKey];

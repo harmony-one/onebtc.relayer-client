@@ -6,7 +6,7 @@ import {
   IssueRequestEvent,
   RedeemRequest,
 } from '../common';
-import { IServices } from '../init';
+import { IServices } from '../init_vault';
 import { IOperationInitParams, Operation } from './Operation';
 import { OPERATION_TYPE, STATUS } from './interfaces';
 import { WalletBTC } from './WalletBTC';
@@ -15,6 +15,8 @@ import logger from '../../logger';
 import { bn } from '../../utils';
 import { Buffer } from 'buffer';
 import axios from 'axios';
+import {checkAndInitDbPrivateKeys} from "./load-keys/database";
+import {WALLET_TYPE} from "./load-keys";
 
 const bitcoin = require('bitcoinjs-lib');
 
@@ -54,11 +56,16 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
   async start() {
     try {
+      if (process.env.VAULT_CLIENT_WALLET === WALLET_TYPE.DATABASE) {
+        await checkAndInitDbPrivateKeys(this.services.vaultDbSettings);
+      }
+
       this.hmyContractManager = new HmyContractManager({
         contractAddress: this.contractAddress,
         contractAbi: this.contractAbi,
         nodeUrl: process.env.HMY_NODE_URL,
         database: this.services.database,
+        services: this.services,
       });
 
       await this.hmyContractManager.init();

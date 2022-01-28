@@ -52,6 +52,7 @@ export class WalletBTC {
       dbKey: 'btcPrivateKey',
       name: 'BTC',
       database: this.services.database,
+      services: this.services,
     });
 
     this.btcPrivateKey = convertBtcKeyToHex(btcPrivateKey);
