@@ -60,7 +60,7 @@ export class LogEvents {
 
   async start() {
     try {
-      this.lastBlock = 22142929; // await getContractDeploymentBlock(this.contractAddress);
+      this.lastBlock = await getContractDeploymentBlock(this.contractAddress);
       this.startBlock = this.lastBlock;
 
       setTimeout(this.readEvents, 100);
