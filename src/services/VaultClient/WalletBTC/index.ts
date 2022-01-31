@@ -16,7 +16,6 @@ import { derivate } from './derivate';
 import { convertBtcKeyToHex, getActualOutputs } from './helpers';
 import { sleep } from '../../../utils';
 import { ActionsQueue } from './ActionsQueue';
-import { loadKey } from '../load-keys';
 const log = logger.module('WalletBTC:main');
 
 export interface IWalletBTC {
@@ -45,16 +44,7 @@ export class WalletBTC {
     this.queue = new ActionsQueue();
   }
 
-  init = async () => {
-    const btcPrivateKey = await loadKey({
-      awsKeyFile: 'btc-secret',
-      envKey: 'BTC_VAULT_PRIVATE_KEY',
-      dbKey: 'btcPrivateKey',
-      name: 'BTC',
-      database: this.services.database,
-      services: this.services,
-    });
-
+  init = async (btcPrivateKey: string) => {
     this.btcPrivateKey = convertBtcKeyToHex(btcPrivateKey);
   };
 

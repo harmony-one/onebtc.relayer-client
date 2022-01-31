@@ -16,7 +16,7 @@ import { bn } from '../../utils';
 import { Buffer } from 'buffer';
 import axios from 'axios';
 import {checkAndInitDbPrivateKeys} from "./load-keys/database";
-import {WALLET_TYPE} from "./load-keys";
+import {loadKey, WALLET_TYPE} from "./load-keys";
 
 const bitcoin = require('bitcoinjs-lib');
 
@@ -60,22 +60,37 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
         await checkAndInitDbPrivateKeys(this.services.vaultDbSettings);
       }
 
+      const hmyPrivateKey = await loadKey({
+        awsKeyFile: 'hmy-secret',
+        envKey: 'HMY_VAULT_PRIVATE_KEY',
+        dbKey: 'hmyPrivateKey',
+        name: 'Harmony',
+        services: this.services,
+      });
+
+      const btcPrivateKey = await loadKey({
+        awsKeyFile: 'btc-secret',
+        envKey: 'BTC_VAULT_PRIVATE_KEY',
+        dbKey: 'btcPrivateKey',
+        name: 'BTC',
+        services: this.services,
+      });
+
       this.hmyContractManager = new HmyContractManager({
         contractAddress: this.contractAddress,
         contractAbi: this.contractAbi,
         nodeUrl: process.env.HMY_NODE_URL,
         database: this.services.database,
-        services: this.services,
       });
 
-      await this.hmyContractManager.init();
+      await this.hmyContractManager.init(hmyPrivateKey);
 
       this.walletBTC = new WalletBTC({
         services: this.services,
         vaultId: this.hmyContractManager.masterAddress,
       });
 
-      await this.walletBTC.init();
+      await this.walletBTC.init(btcPrivateKey);
 
       this.eventEmitter.on(`ADD_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
 

@@ -18,7 +18,6 @@ export const loadKey = async (params: {
   awsKeyFile;
   dbKey;
   name;
-  database: DBService;
   services: IServices;
 }): Promise<string> => {
   let secretKey;
@@ -38,6 +37,7 @@ export const loadKey = async (params: {
 
     case WALLET_TYPE.DATABASE:
       secretKey = await loadFromDatabase(params.dbKey, params.services);
+      break;
 
     default:
       secretKey = process.env[params.envKey];

@@ -8,9 +8,7 @@ import { getBlockByHeight, getMerkleProof, getTransactionByHash } from '../bitco
 import { sleep } from '../utils';
 
 import logger from '../logger';
-import { loadKey } from '../services/VaultClient/load-keys';
 import { DBService } from '../services/database';
-import {IServices} from "../services/init";
 const log = logger.module('HmyContractManager:main');
 
 export interface IHmyContractManager {
@@ -18,7 +16,6 @@ export interface IHmyContractManager {
   contractAbi: any;
   nodeUrl: string;
   database: DBService;
-  services: IServices;
 }
 
 export class HmyContractManager {
@@ -28,26 +25,15 @@ export class HmyContractManager {
   contractAddress: string;
   contractAbi: any;
   database: DBService;
-  services: IServices;
 
   constructor(params: IHmyContractManager) {
     this.web3 = new Web3(params.nodeUrl);
     this.contractAbi = params.contractAbi;
     this.contractAddress = params.contractAddress;
     this.database = params.database;
-    this.services = params.services;
   }
 
-  init = async () => {
-    const hmyPrivateKey = await loadKey({
-      awsKeyFile: 'hmy-secret',
-      envKey: 'HMY_VAULT_PRIVATE_KEY',
-      dbKey: 'hmyPrivateKey',
-      name: 'Harmony',
-      database: this.database,
-      services: this.services,
-    });
-
+  init = async (hmyPrivateKey: string) => {
     const ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(hmyPrivateKey);
     this.web3.eth.accounts.wallet.add(ethMasterAccount);
     this.web3.eth.defaultAccount = ethMasterAccount.address;
