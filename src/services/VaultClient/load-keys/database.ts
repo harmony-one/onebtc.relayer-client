@@ -28,6 +28,12 @@ const requestSettingsPrompt = async () => {
   const answers = await inquirer.prompt([
     {
       type: 'password',
+      message: 'Enter password to encrypt your private keys',
+      name: 'password',
+      validate: validateNotEmpty,
+    },
+    {
+      type: 'password',
       message: 'Enter Harmony Private Key',
       name: 'hmyPrivateKey',
       validate: validateNotEmpty,
@@ -36,12 +42,6 @@ const requestSettingsPrompt = async () => {
       type: 'password',
       message: 'Enter Bitcoin Private Key',
       name: 'btcPrivateKey',
-      validate: validateNotEmpty,
-    },
-    {
-      type: 'password',
-      message: 'Enter a password',
-      name: 'password',
       validate: validateNotEmpty,
     },
   ]);
@@ -61,11 +61,11 @@ const requestPassOrRecover = async (): Promise<START_MODE> => {
       message: 'Start application',
       choices: [
         {
-          name: 'Enter password',
+          name: 'Enter encryption password and load private keys from db',
           value: START_MODE.ENTER_PASSWORD
         },
         {
-          name: 'Reset password',
+          name: 'Reset encryption password (all private keys also will be deleted)',
           value: START_MODE.RESET_PASSWORD
         }
       ],
@@ -81,7 +81,7 @@ const requestPassword = async () => {
   const answers = await inquirer.prompt([
     {
       type: 'password',
-      message: 'Enter a password',
+      message: 'Enter encryption password and load private keys from db',
       name: 'password',
     },
   ]);
@@ -93,7 +93,7 @@ const resetPasswordAndKeys = async (vaultSettingService: VaultSettingService) =>
   const answers = await inquirer.prompt([
     {
       type: 'confirm',
-      message: 'Reset password?',
+      message: 'Reset encryption password and all private keys?',
       default: false,
       name: 'reset'
     },
@@ -109,6 +109,9 @@ const resetPasswordAndKeys = async (vaultSettingService: VaultSettingService) =>
 }
 
 export const checkAndInitDbPrivateKeys = async (vaultSettingService: VaultSettingService) => {
+  console.log('You are loading Vault in the database-store private keys mode');
+  console.log('All private keys will be encrypted with a password');
+
   const settings = await vaultSettingService.getSettings();
 
   // if PK already exist
@@ -126,10 +129,10 @@ export const checkAndInitDbPrivateKeys = async (vaultSettingService: VaultSettin
           return keys;
         }
 
-        log.error('password is wrong');
+        log.error('\nEncryption password is wrong\n');
         return checkAndInitDbPrivateKeys(vaultSettingService);
       } catch (ex) {
-        log.error('password is wrong');
+        log.error('\nEncryption password is wrong\n');
         return checkAndInitDbPrivateKeys(vaultSettingService);
       }
 
