@@ -2,13 +2,26 @@ import inquirer from 'inquirer';
 import {VaultSettingService} from "../VaultSettings/VaultSettings";
 import {decryptMsg, encryptMsg} from "./crypt";
 import {IServices} from "../../init_vault";
+import logger from "../../../logger";
+
+const log = logger.module('KeyStorage');
 
 export let PASSWORD = '';
 
 export const loadFromDatabase = async (dbKey: string, services: IServices) => {
   const settings = await services.vaultDbSettings.getSettings();
 
-  return decryptMsg(settings[dbKey], PASSWORD);
+  const keys = JSON.parse(decryptMsg(settings.keys, PASSWORD));
+
+  return keys[dbKey];
+}
+
+const validateNotEmpty = async (input) => {
+  if (input) {
+    return true;
+  }
+
+  return 'should be not empty'
 }
 
 const requestSettingsPrompt = async () => {
@@ -16,26 +29,52 @@ const requestSettingsPrompt = async () => {
     {
       type: 'password',
       message: 'Enter Harmony Private Key',
-      name: 'harmonyPK'
+      name: 'hmyPrivateKey',
+      validate: validateNotEmpty,
     },
     {
       type: 'password',
       message: 'Enter Bitcoin Private Key',
-      name: 'bitcoinPK'
+      name: 'btcPrivateKey',
+      validate: validateNotEmpty,
     },
     {
       type: 'password',
       message: 'Enter a password',
       name: 'password',
-    },
-    {
-      type: 'password',
-      message: 'Repeat a password',
-      name: 'passwordConfirm',
+      validate: validateNotEmpty,
     },
   ]);
 
   return answers;
+}
+
+enum START_MODE {
+  ENTER_PASSWORD = 'enterPassword',
+  RESET_PASSWORD = 'resetPassword'
+}
+
+const requestPassOrRecover = async (): Promise<START_MODE> => {
+  const answers = await inquirer.prompt([
+    {
+      type: 'list',
+      message: 'Start application',
+      choices: [
+        {
+          name: 'Enter password',
+          value: START_MODE.ENTER_PASSWORD
+        },
+        {
+          name: 'Reset password',
+          value: START_MODE.RESET_PASSWORD
+        }
+      ],
+      default: START_MODE.ENTER_PASSWORD,
+      name: 'reset',
+    },
+  ]);
+
+  return answers.reset;
 }
 
 const requestPassword = async () => {
@@ -62,8 +101,7 @@ const resetPasswordAndKeys = async (vaultSettingService: VaultSettingService) =>
 
   if (answers.reset) {
     await vaultSettingService.updateSettings({
-      hmyPrivateKey: '',
-      btcPrivateKey: '',
+      keys: '',
     })
   }
 
@@ -74,30 +112,53 @@ export const checkAndInitDbPrivateKeys = async (vaultSettingService: VaultSettin
   const settings = await vaultSettingService.getSettings();
 
   // if PK already exist
-  if (settings.hmyPrivateKey && settings.btcPrivateKey) {
-    const {password} = await requestPassword();
+  if (settings.keys) {
+    const option = await requestPassOrRecover();
 
-    if (!password) {
-      await resetPasswordAndKeys(vaultSettingService);
-      await checkAndInitDbPrivateKeys(vaultSettingService);
-      return;
+    if (option === START_MODE.ENTER_PASSWORD) {
+      const {password} = await requestPassword();
+      PASSWORD = password;
+
+      try {
+        const keys = JSON.parse(decryptMsg(settings.keys, PASSWORD));
+
+        if (keys.hmyPrivateKey && keys.btcPrivateKey) {
+          return keys;
+        }
+
+        log.error('password is wrong');
+        return checkAndInitDbPrivateKeys(vaultSettingService);
+      } catch (ex) {
+        log.error('password is wrong');
+        return checkAndInitDbPrivateKeys(vaultSettingService);
+      }
+
     }
-    PASSWORD = password;
-    return;
+
+    if (option === START_MODE.RESET_PASSWORD) {
+      await resetPasswordAndKeys(vaultSettingService);
+      return await checkAndInitDbPrivateKeys(vaultSettingService);
+    }
+
+    throw new Error('Unhandled start option');
   }
 
   // Setup PK
-  const {password, harmonyPK, bitcoinPK} = await requestSettingsPrompt();
+  const {password, hmyPrivateKey, btcPrivateKey} = await requestSettingsPrompt();
 
-  const hmyPrivateKey = encryptMsg(harmonyPK, password);
-  const btcPrivateKey = encryptMsg(bitcoinPK, password);
-
-  await vaultSettingService.updateSettings({
+  const keys = encryptMsg(JSON.stringify({
     hmyPrivateKey,
     btcPrivateKey,
+  }), password);
+
+  await vaultSettingService.updateSettings({
+    keys,
   });
 
   PASSWORD = password;
 
-  return;
+  return {
+    hmyPrivateKey,
+    btcPrivateKey,
+  };
 }
