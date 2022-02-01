@@ -1,15 +1,13 @@
 import {DataLayerService} from "../../common";
 
 const defaultConfig = {
-  hmyPrivateKey: '',
-  btcPrivateKey: '',
+  keys: '',
 }
 
 const defaultKey = 'default';
 
 export interface VaultSettings {
-  hmyPrivateKey: string;
-  btcPrivateKey: string;
+  keys: string;
 }
 
 export class VaultSettingService extends DataLayerService<VaultSettings> {
