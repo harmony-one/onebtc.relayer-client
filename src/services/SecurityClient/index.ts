@@ -9,6 +9,8 @@ import { IssueService } from '../Dashboard/issue';
 import { LogEvents } from '../Dashboard/events';
 import { RelayerClient } from '../Relayer';
 import { IssueRequest } from '../common';
+import { getBech32FromHex, getBech32Unify } from '../../bitcoin/helpers';
+import BN from 'bn.js';
 const log = logger.module('relay:Service');
 
 export interface ISecurityClient {
@@ -67,7 +69,7 @@ export class SecurityClient {
       this.eventEmitter.on('ADD_IssueRequested', issue => this.issuesData.push(issue));
 
       // this.startBtcHeight = Number(await getHeight()) - 100;
-      this.startBtcHeight = 714382;
+      this.startBtcHeight = 708987;
       // this.startBtcHeight = 720035 // stuck with this
 
       this.currentBtcHeight = this.startBtcHeight;
@@ -87,13 +89,35 @@ export class SecurityClient {
     }
   }
 
-  // TODO convert address to common format !!!
   findIssueByBtcAddress = btcAddress =>
-    this.issuesData.find(issue => !!issue.btcAddress && issue.btcAddress === btcAddress);
+    this.issuesData.find(issue => {
+      if (!issue.btcAddress || !btcAddress) {
+        return false;
+      }
+
+      const issueBech32Address = getBech32FromHex(issue.btcAddress);
+
+      const txBech32Address = getBech32Unify(btcAddress);
+
+      return issueBech32Address === txBech32Address;
+    });
 
   validateSingleTransaction = async (issue: IssueRequest, tx: any) => {
-    if (tx.outputs?.length !== 3 || !tx.outputs[2].script) {
-      this.vaultsBlocker.freezeVault(issue.vault, tx);
+    const verifiedTransfer = {
+      issue,
+      tx,
+      output_length_ok: true,
+      output_0_ok: true,
+      output_1_ok: true,
+      output_2_ok: true,
+    };
+
+    if (tx.outputs?.length !== 3) {
+      verifiedTransfer.output_length_ok = false;
+    }
+
+    if (!tx.outputs[2].script) {
+      verifiedTransfer.output_2_ok = false;
     }
 
     //search redeem by script
@@ -101,25 +125,29 @@ export class SecurityClient {
     const redeem = req.content[0];
 
     if (!redeem) {
-      this.vaultsBlocker.freezeVault(issue.vault, tx);
+      verifiedTransfer.output_2_ok = false;
     }
 
     //check other outputs
-    if(tx.outputs[1].address !== issue.btcAddress) {
-      this.vaultsBlocker.freezeVault(issue.vault, tx);
+    if (getBech32Unify(tx.outputs[1].address) !== getBech32FromHex(issue.btcAddress)) {
+      verifiedTransfer.output_1_ok = false;
     }
 
-    if(tx.outputs[0].address !== redeem.btcAddress) {
-      this.vaultsBlocker.freezeVault(issue.vault, tx);
+    if (getBech32Unify(tx.outputs[0].address) !== getBech32FromHex(redeem.btcAddress)) {
+      verifiedTransfer.output_0_ok = false;
     }
 
-    if(tx.outputs[0].value !== redeem.amount) {
-      this.vaultsBlocker.freezeVault(issue.vault, tx);
+    const isAmountEqual = new BN(tx.outputs[0].value).eq(new BN(redeem.amountBtc));
+
+    if (!isAmountEqual) {
+      verifiedTransfer.output_0_ok = false;
     }
+
+    this.vaultsBlocker.addVerifiedTransfer(verifiedTransfer);
   };
 
   validateTransactions = async (txs: any[]) => {
-    console.log('txs.length: ', txs.length);
+    console.log(`txs.length: ${txs.length}`);
 
     const bridgeTxs = [];
 
@@ -146,6 +174,9 @@ export class SecurityClient {
         console.log('Audit: Wait full events sync...');
         await sleep(5000);
       }
+
+      console.log('-------- // ---------');
+      console.log('Start loading block: ', this.currentBtcHeight);
 
       const fullBlockInfo = await getFullBlockByHeight(this.currentBtcHeight);
 

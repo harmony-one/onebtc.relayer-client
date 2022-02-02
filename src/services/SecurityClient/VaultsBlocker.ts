@@ -77,4 +77,8 @@ export class VaultsBlocker {
   freezeVault = (vaultAddress: string, transaction: any) => {
     console.log('SECURITY ALERT: ', vaultAddress, transaction.hash)
   };
+
+  addVerifiedTransfer = (transaction: any) => {
+    console.log('SECURITY ALERT: ', transaction)
+  };
 }
