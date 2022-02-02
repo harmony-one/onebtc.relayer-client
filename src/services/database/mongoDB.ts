@@ -111,9 +111,9 @@ export class DBService {
       let collection = this.db.collection(collectionName);
 
       if (!limit) {
-        return await collection.find(filter).sort(sort).toArray();
+        return await collection.find(filter).sort(sort).collation({locale: "en_US", numericOrdering: true}).toArray();
       } else {
-        return await collection.find(filter).sort(sort).limit(limit).skip(skip).toArray();
+        return await collection.find(filter).sort(sort).collation({locale: "en_US", numericOrdering: true}).limit(limit).skip(skip).toArray();
       }
     } catch (e) {
       log.error('Error getCollectionData', { error: e });

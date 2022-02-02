@@ -1,4 +1,4 @@
-import { asyncHandler } from './helpers';
+import { asyncHandler, parseSort } from './helpers';
 import { IServices } from '../services/init';
 
 export const routes = (app, services: IServices) => {
@@ -79,8 +79,9 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/vaults/data',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0, id } = req.query;
-      const data = await services.vaults.getData({ size, page, id, sort: { opentime: -1 } });
+      const { size = 50, page = 0, id, sort } = req.query;
+      const sorting = parseSort(sort, {lastUpdate: -1});
+      const data = await services.vaults.getData({ size, page, id, sort: sorting });
       return res.json(data);
     })
   );
@@ -104,12 +105,14 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/issues/data',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0, requester, vault, id } = req.query;
+      const { size = 50, page = 0, requester, vault, id, sort } = req.query;
+
+      const sorting = parseSort(sort, { opentime: -1 });
 
       const data = await services.issues.getData({
         size,
         page,
-        sort: { opentime: -1 },
+        sort: sorting,
         filter: {
           requester,
           vault,
@@ -140,12 +143,14 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/redeems/data',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0, requester, vault, id } = req.query;
+      const { size = 50, page = 0, requester, vault, id, sort } = req.query;
+
+      const sorting = parseSort(sort, { opentime: -1 });
 
       const data = await services.redeems.getData({
         size,
         page,
-        sort: { opentime: -1 },
+        sort: sorting,
         filter: {
           requester,
           vault,
@@ -189,12 +194,14 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/operations/data',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0, requester, vault, id } = req.query;
+      const { size = 50, page = 0, requester, vault, id, sort } = req.query;
+
+      const sorting = parseSort(sort, { timestamp: -1 });
 
       const data = await services.vaultClient.getData({
         size,
         page,
-        sort: { timestamp: -1 },
+        sort: sorting,
         filter: {
           requester,
           vault,
