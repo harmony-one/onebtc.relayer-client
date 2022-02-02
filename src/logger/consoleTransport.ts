@@ -18,6 +18,27 @@ function handler(logMessage: TLogMessage) {
   return logMessage;
 }
 
+const prepareBlackList = (config: string = '') => {
+  return config.split(',').filter(Boolean);
+}
+
+const blackList = prepareBlackList(process.env.LOG_BLACKLIST).map((item) => new RegExp(item));
+
+const filterBlackList = (logObject: TLogMessage) => {
+  if (blackList.length === 0) {
+    return true;
+  }
+
+  for (let i = 0; i < blackList.length; i++) {
+    if(blackList[i].test(logObject.moduleName)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export const consoleTransport = zerg.createListener({
   handler: (...args) => consoleNodeColorful(handler(...args)),
+  filter: (logMessage => filterBlackList(logMessage))
 });
