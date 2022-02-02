@@ -10,6 +10,10 @@ export const getBech32FromHex = (addressHex: string) => {
   );
 };
 
+export const getBase58FromHex = (addressHex: string) => {
+  return bitcoin.address.toBase58Check(Buffer.from(addressHex.slice(2), 'hex'), 0);
+};
+
 export const getBech32FromBase58 = (address: string) => {
   const bAddress = bitcoin.address.fromBase58Check(address);
 

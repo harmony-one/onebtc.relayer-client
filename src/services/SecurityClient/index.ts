@@ -9,7 +9,11 @@ import { IssueService } from '../Dashboard/issue';
 import { LogEvents } from '../Dashboard/events';
 import { RelayerClient } from '../Relayer';
 import { IssueRequest } from '../common';
-import { getBech32FromHex, getBech32Unify } from '../../bitcoin/helpers';
+import {
+  getBase58FromHex,
+  getBech32FromHex,
+  getBech32Unify,
+} from '../../bitcoin/helpers';
 import BN from 'bn.js';
 const log = logger.module('relay:Service');
 
@@ -45,7 +49,7 @@ export class SecurityClient {
   status = STATUS.STOPPED;
   lastError = '';
 
-  issuesData: IssueRequest[];
+  issuesData: Array<IssueRequest & { btcAddressBech32: string; btcAddressBase58: string }>;
   eventEmitter: EventEmitter;
 
   constructor(params: ISecurityClient) {
@@ -65,7 +69,12 @@ export class SecurityClient {
       //   throw new Error('vaultsBlocker not launched');
       // }
 
-      this.issuesData = await this.issues.loadAllData();
+      this.issuesData = (await this.issues.loadAllData()).map(issue => ({
+        ...issue,
+        btcAddressBech32: getBech32FromHex(issue.btcAddress),
+        btcAddressBase58: getBase58FromHex(issue.btcAddress),
+      }));
+
       this.eventEmitter.on('ADD_IssueRequested', issue => this.issuesData.push(issue));
 
       // this.startBtcHeight = Number(await getHeight()) - 100;
@@ -95,17 +104,20 @@ export class SecurityClient {
         return false;
       }
 
-      const issueBech32Address = getBech32FromHex(issue.btcAddress);
-
-      const txBech32Address = getBech32Unify(btcAddress);
-
-      return issueBech32Address === txBech32Address;
+      if (btcAddress.startsWith(process.env.BTC_TC_PREFIX)) {
+        return issue.btcAddressBech32.toLowerCase() === btcAddress.toLowerCase();
+      } else {
+        return issue.btcAddressBase58.toLowerCase() === btcAddress.toLowerCase();
+      }
     });
 
   validateSingleTransaction = async (issue: IssueRequest, tx: any) => {
     const verifiedTransfer = {
       issue,
       tx,
+      vault: issue.vault,
+      btcAddress: issue.btcAddress,
+      transactionHash: tx.hash,
       output_length_ok: true,
       output_0_ok: true,
       output_1_ok: true,
