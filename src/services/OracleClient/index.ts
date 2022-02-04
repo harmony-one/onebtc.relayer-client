@@ -50,9 +50,9 @@ export class OracleClient {
 
   async start() {
     try {
-      if (process.env.HMY_ORACLE_PRIVATE_KEY) {
+      if (process.env.HMY_RELAY_PRIVATE_KEY) {
         let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-          process.env.HMY_ORACLE_PRIVATE_KEY
+          process.env.HMY_RELAY_PRIVATE_KEY
         );
 
         this.web3.eth.accounts.wallet.add(ethMasterAccount);
