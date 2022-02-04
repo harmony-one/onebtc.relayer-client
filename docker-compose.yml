@@ -9,7 +9,7 @@ services:
     volumes:
       - ./mongodb/db:/data/db
   vault:
-    image: yuriyharmony/onebtc.vault-client:latest
+    image: harmonyone/onebtc-vault:latest
     restart: always
     depends_on:
       - "mongo-service"
@@ -26,3 +26,4 @@ services:
       DATABASE_URL: "mongodb://mongo-service:27017/MyDb"
       DATABASE_NAME: "onebtc"
       AWS_CONFIG_REGION: "us-west-1"
+      VAULT_CLIENT_WALLET: "env"
