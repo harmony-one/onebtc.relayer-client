@@ -9,7 +9,7 @@ services:
     volumes:
       - ./mongodb/db:/data/db
   vault:
-    image: harmonyone/onebtc-vault:latest
+    image: yuriyharmony/onebtc.vault-client:latest
     restart: always
     depends_on:
       - "mongo-service"
