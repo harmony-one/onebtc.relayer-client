@@ -9,7 +9,10 @@ services:
     volumes:
       - ./mongodb/db:/data/db
   vault:
-    image: yuriyharmony/onebtc.vault-client:latest
+    container_name: "vault"
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    image: harmonyone/onebtc-vault:latest
     restart: always
     depends_on:
       - "mongo-service"
