@@ -63,9 +63,18 @@ export class LogEvents {
       this.lastBlock = await getContractDeploymentBlock(this.contractAddress);
       this.startBlock = this.lastBlock;
 
+      const req = await this.getAllEvents({ size: 1, page: 0, sort: { blockNumber: -1 } });
+
+      if (req.content.length) {
+        this.lastBlock = req.content[0].blockNumber;
+      }
+
       setTimeout(this.readEvents, 100);
 
-      log.info(`Start Event Service ${this.dbCollectionPrefix} - ok`);
+      log.info(`Start Event Service ${this.dbCollectionPrefix} - ok`, {
+        lastBlock: this.lastBlock,
+        startBlock: this.startBlock,
+      });
     } catch (e) {
       log.error(`Start ${this.dbCollectionPrefix}`, { error: e });
       throw new Error(`start ${this.dbCollectionPrefix}: ${e.message}`);

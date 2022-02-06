@@ -3,9 +3,6 @@ import logger from '../../logger';
 import { sleep } from '../../utils';
 const log = logger.module('Database:mongo');
 
-const DATABASE_URL = process.env.DATABASE_URL;
-const DATABASE_NAME = process.env.DATABASE_NAME;
-
 export class DBService {
   public db: Db;
   public mongoClient: MongoClient;
@@ -15,9 +12,9 @@ export class DBService {
 
   init = async () => {
     try {
-      this.mongoClient = new MongoClient(DATABASE_URL);
+      this.mongoClient = new MongoClient(process.env.DATABASE_URL);
       await this.mongoClient.connect();
-      this.db = this.mongoClient.db(DATABASE_NAME);
+      this.db = this.mongoClient.db(process.env.DATABASE_NAME);
       const res = await this.db.command({ ping: 1 });
 
       if (res.ok !== 1) {
