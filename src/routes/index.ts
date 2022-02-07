@@ -297,4 +297,56 @@ export const routes = (app, services: IServices) => {
       res.send(JSON.stringify(data, null, 4));
     })
   );
+
+  app.get(
+    '/security/blocks',
+    asyncHandler(async (req, res) => {
+      const { size = 50, page = 0, height, hasUnPermittedTxs, id } = req.query;
+
+      const data = await services.securityClient.getData({
+        size,
+        page,
+        sort: { timestamp: -1 },
+        filter: {
+          height,
+          hasUnPermittedTxs,
+          id,
+        },
+      });
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/security/txs',
+    asyncHandler(async (req, res) => {
+      const { 
+        size = 50, 
+        page = 0, 
+        height, 
+        btcAddress, 
+        permitted, 
+        transactionHash, 
+        vault 
+      } = req.query;
+
+      const data = await services.vaultsBlocker.getData({
+        size,
+        page,
+        sort: { timestamp: -1 },
+        filter: {
+          height, 
+          btcAddress, 
+          permitted, 
+          transactionHash, 
+          vault 
+        },
+      });
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
 };

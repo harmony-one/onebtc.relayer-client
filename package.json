@@ -58,7 +58,7 @@
     "lodash.get": "^4.4.2",
     "moment": "^2.29.0",
     "mongodb": "^4.1.2",
-    "node-fetch": "^3.2.0",
+    "node-fetch": "2.6.7",
     "node-fetch-progress": "^1.0.2",
     "request": "^2.88.2",
     "tiny-secp256k1": "^1.1.6",

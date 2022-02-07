@@ -126,11 +126,17 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
         return false;
       }
 
-      if (btcAddress.startsWith(process.env.BTC_TC_PREFIX)) {
-        return issue.btcAddressBech32.toLowerCase() === btcAddress.toLowerCase();
-      } else {
-        return issue.btcAddressBase58.toLowerCase() === btcAddress.toLowerCase();
-      }
+      // try {
+        if (btcAddress.startsWith(process.env.BTC_TC_PREFIX)) {
+          return issue.btcAddressBech32.toLowerCase() === btcAddress.toLowerCase();
+        } else {
+          return issue.btcAddressBase58.toLowerCase() === btcAddress.toLowerCase();
+        }
+      // } catch (e) {
+      //   console.error(e);
+      //   console.log(issue);
+      //   throw new Error(e);
+      // } 
     });
 
   validateSingleTransaction = async (issue: IssueRequest, tx: any) => {

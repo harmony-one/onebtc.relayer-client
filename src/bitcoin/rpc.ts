@@ -8,7 +8,7 @@ const merkle = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/merkle');
 const hash256 = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/hash256');
 const assert = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/bsert');
 
-const fetch = require('node-fetch')
+import fetch from 'node-fetch';
 const Progress = require('node-fetch-progress')
 
 import logger from '../logger';
@@ -34,7 +34,7 @@ export const getBlockByHeight = async (height) => {
   return block;
 };
 
-export const getFullBlockByHeight = async (height) => {
+export const getFullBlockByHeight = async (height): Promise<any> => {
   const response = await fetch(`${process.env.BTC_NODE_URL}/block/${height}`);
 
   const progress = new Progress(response, { throttle: 100 });
