@@ -48,8 +48,8 @@ export const InitServices = async (): Promise<IServices> => {
     oracleContractAddress: process.env.HMY_ORACLE_CONTRACT,
   });
 
-  if (process.env.HMY_ORACLE_PRIVATE_KEY) {
-    // await services.oracleClient.start();
+  if (process.env.HMY_RELAY_PRIVATE_KEY) {
+    await services.oracleClient.start();
   }
 
   services.vaultClient = new VaultClient({

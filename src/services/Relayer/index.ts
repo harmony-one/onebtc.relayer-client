@@ -130,6 +130,13 @@ export class RelayerClient {
     } catch (e) {
       log.error('Error to get new Header', { error: e, btcLastBlock: this.btcLastBlock });
       this.lastError = e && e.message;
+      
+      try {
+        const res = await this.relayContract.methods.getBestBlock().call();
+        this.btcLastBlock = Number(res.height);
+      } catch (e) {
+        this.lastError = e && e.message;
+      }
 
       const res = await this.relayContract.methods.getBestBlock().call();
       this.btcLastBlock = Number(res.height);
