@@ -112,3 +112,8 @@ artifacts/
 
 package-lock.json
 yarn.lock
+
+.idea
+mongodb/
+
+frontend

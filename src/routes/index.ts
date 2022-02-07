@@ -267,4 +267,14 @@ export const routes = (app, services: IServices) => {
       res.send(data);
     })
   );
+
+  app.get(
+    '/security/info',
+    asyncHandler(async (req, res) => {
+      const data = await services.securityClient.getServiceInfo();
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
 };

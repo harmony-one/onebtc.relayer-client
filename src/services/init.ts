@@ -7,6 +7,8 @@ import { RelayerClient } from './Relayer';
 import { VaultClient } from './VaultClient';
 import { HistoryService } from './History';
 import {OracleClient} from "./OracleClient";
+import {VaultsBlocker} from "./SecurityClient/VaultsBlocker";
+import {SecurityClient} from "./SecurityClient";
 
 export interface IServices {
   relayerClient?: RelayerClient;
@@ -19,6 +21,8 @@ export interface IServices {
   issues?: IssueService;
   redeems?: IssueService;
   history?: HistoryService;
+  vaultsBlocker?: VaultsBlocker;
+  securityClient?: SecurityClient;
 }
 
 export const InitServices = async (): Promise<IServices> => {

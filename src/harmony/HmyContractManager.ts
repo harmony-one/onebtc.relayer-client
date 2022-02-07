@@ -8,13 +8,14 @@ import { getBlockByHeight, getMerkleProof, getTransactionByHash } from '../bitco
 import { sleep } from '../utils';
 
 import logger from '../logger';
-import { getSecretKeyAWS } from './utils';
+import { DBService } from '../services/database';
 const log = logger.module('HmyContractManager:main');
 
 export interface IHmyContractManager {
   contractAddress: string;
   contractAbi: any;
   nodeUrl: string;
+  database: DBService;
 }
 
 export class HmyContractManager {
@@ -23,24 +24,16 @@ export class HmyContractManager {
   masterAddress: string;
   contractAddress: string;
   contractAbi: any;
+  database: DBService;
 
   constructor(params: IHmyContractManager) {
     this.web3 = new Web3(params.nodeUrl);
     this.contractAbi = params.contractAbi;
     this.contractAddress = params.contractAddress;
+    this.database = params.database;
   }
 
-  init = async () => {
-    let hmyPrivateKey = process.env.HMY_VAULT_PRIVATE_KEY;
-
-    if (!hmyPrivateKey) {
-      hmyPrivateKey = await getSecretKeyAWS('hmy-secret');
-    }
-
-    if (!hmyPrivateKey) {
-      throw new Error('HMY_VAULT_PRIVATE_KEY not found');
-    }
-
+  init = async (hmyPrivateKey: string) => {
     const ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(hmyPrivateKey);
     this.web3.eth.accounts.wallet.add(ethMasterAccount);
     this.web3.eth.defaultAccount = ethMasterAccount.address;

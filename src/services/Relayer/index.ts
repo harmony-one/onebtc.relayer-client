@@ -14,6 +14,7 @@ export interface IRelayerClient {
   database: DBService;
   dbCollectionName: string;
   relayContractAddress: string;
+  readonly?: boolean;
 }
 
 enum RELAYER_STATUS {
@@ -25,6 +26,7 @@ enum RELAYER_STATUS {
 export class RelayerClient {
   database: DBService;
   dbCollectionName = 'headers';
+  readonly = false;
 
   web3: Web3;
   ethMasterAccount: string;
@@ -32,6 +34,7 @@ export class RelayerClient {
   relayContractAddress: string;
 
   btcLastBlock: number;
+  nodeLastBlock: number;
 
   status = RELAYER_STATUS.STOPPED;
   lastError = '';
@@ -43,11 +46,20 @@ export class RelayerClient {
     this.web3 = new Web3(process.env.HMY_NODE_URL);
 
     this.relayContractAddress = params.relayContractAddress;
+    this.readonly = params.readonly || false;
   }
 
   async start() {
     try {
-      if (process.env.HMY_RELAY_PRIVATE_KEY) {
+      if (this.readonly) {
+        this.relayContract = new this.web3.eth.Contract(
+          abi as AbiItem[],
+          this.relayContractAddress
+        );
+
+        const res = await this.relayContract.methods.getBestBlock().call();
+        this.btcLastBlock = Number(res.height);
+      } else if (process.env.HMY_RELAY_PRIVATE_KEY) {
         let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
           process.env.HMY_RELAY_PRIVATE_KEY
         );
@@ -71,12 +83,31 @@ export class RelayerClient {
 
       this.status = RELAYER_STATUS.LAUNCHED;
 
-      setTimeout(this.syncBlockHeader, 100);
+      if (this.readonly) {
+        setTimeout(this.readLastSyncedBlock, 100);
+      } else {
+        setTimeout(this.syncBlockHeader, 100);
+      }
     } catch (e) {
       log.error('Start Relayer Service - failed', { error: e });
       // this.lastError = e && e.message;
     }
   }
+
+  readLastSyncedBlock = async () => {
+    try {
+      const res = await this.relayContract.methods.getBestBlock().call();
+      this.btcLastBlock = Number(res.height);
+      this.nodeLastBlock = await getHeight();
+    } catch (e) {
+      log.error('Error to readLastSyncedBlock', { error: e, btcLastBlock: this.btcLastBlock });
+      this.lastError = e && e.message;
+
+      await sleep(process.env.SYNC_INTERVAL);
+    }
+
+    setTimeout(this.readLastSyncedBlock, Number(process.env.SYNC_INTERVAL));
+  };
 
   syncBlockHeader = async () => {
     try {
@@ -107,6 +138,9 @@ export class RelayerClient {
         this.lastError = e && e.message;
       }
 
+      const res = await this.relayContract.methods.getBestBlock().call();
+      this.btcLastBlock = Number(res.height);
+
       await sleep(process.env.SYNC_INTERVAL);
     }
 
@@ -115,8 +149,11 @@ export class RelayerClient {
 
   getLastRelayBlock = () => this.btcLastBlock;
 
+  isSynced = () => this.btcLastBlock === this.nodeLastBlock;
+
   getInfo = () => ({
     height: this.btcLastBlock,
+    readonly: this.readonly,
     status: this.status,
     lastError: this.lastError,
     relayContractAddress: this.relayContractAddress,

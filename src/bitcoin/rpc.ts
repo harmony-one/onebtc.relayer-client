@@ -8,12 +8,15 @@ const merkle = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/merkle');
 const hash256 = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/hash256');
 const assert = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/bsert');
 
+const fetch = require('node-fetch')
+const Progress = require('node-fetch-progress')
+
 import logger from '../logger';
 import { Buffer } from 'buffer';
 import BN from 'bn.js';
 const log = logger.module('BTC-RPC:main');
 
-export const getBlockByHeight = async height => {
+export const getBlockByHeight = async (height) => {
   const response = await axios.get(`${process.env.BTC_NODE_URL}/header/${height}`);
 
   const block = new bitcoin.Block();
@@ -29,6 +32,40 @@ export const getBlockByHeight = async height => {
   block.chainwork = response.data.chainwork;
 
   return block;
+};
+
+export const getFullBlockByHeight = async (height) => {
+  const response = await fetch(`${process.env.BTC_NODE_URL}/block/${height}`);
+
+  const progress = new Progress(response, { throttle: 100 });
+  
+  progress.on('progress', (p) => {
+    // console.log(
+    //   p.total,
+    //   p.done,
+    //   p.totalh,
+    //   p.doneh,
+    //   p.startedAt,
+    //   p.elapsed,
+    //   p.rate,
+    //   p.rateh,
+    //   p.estimated,
+    //   p.progress,
+    //   p.eta,
+    //   p.etah,
+    //   p.etaDate
+    // )
+
+    console.log(
+      p.totalh,
+      p.doneh,
+      Number(p.progress * 100).toFixed(0),
+    )
+  });
+
+  const data = await response.json();
+
+  return data;
 };
 
 export const getHeight = async () => {
