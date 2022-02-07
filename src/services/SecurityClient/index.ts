@@ -8,7 +8,7 @@ import { VaultsBlocker } from './VaultsBlocker';
 import { IssueService } from '../Dashboard/issue';
 import { LogEvents } from '../Dashboard/events';
 import { RelayerClient } from '../Relayer';
-import { IssueRequest } from '../common';
+import { DataLayerService, IssueRequest } from '../common';
 import {
   getBase58FromHex,
   getBech32FromHex,
@@ -20,6 +20,7 @@ const log = logger.module('relay:Service');
 export interface ISecurityClient {
   database: DBService;
   eventEmitter: EventEmitter;
+  dbCollectionName: string;
   issues: IssueService;
   redeems: IssueService;
   vaultsBlocker: VaultsBlocker;
@@ -33,7 +34,15 @@ export enum STATUS {
   PAUSED = 'PAUSED',
 }
 
-export class SecurityClient {
+export interface IBlockCheckInfo {
+  height: number;
+  totalTxsLength: number;
+  bridgeTxsLength: number;
+  verifiedTxs: any[];
+  hasUnPermittedTxs: boolean;
+}
+
+export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
   database: DBService;
 
   currentBtcHeight: number;
@@ -53,6 +62,13 @@ export class SecurityClient {
   eventEmitter: EventEmitter;
 
   constructor(params: ISecurityClient) {
+    super({
+      database: params.database,
+      dbCollectionPrefix: params.dbCollectionName,
+      contractAddress: '',
+      contractAbi: [],
+    });
+
     this.database = params.database;
     this.issues = params.issues;
     this.redeems = params.redeems;
@@ -80,6 +96,12 @@ export class SecurityClient {
       // this.startBtcHeight = Number(await getHeight()) - 100;
       this.startBtcHeight = 708987;
       // this.startBtcHeight = 720035 // stuck with this
+
+      const req = await this.getData({ size: 1, page: 0, sort: { height: -1 } });
+
+      if (req.content.length) {
+        this.startBtcHeight = req.content[0].height;
+      }
 
       this.currentBtcHeight = this.startBtcHeight;
       this.nodeBtcHeight = await getHeight();
@@ -122,6 +144,8 @@ export class SecurityClient {
       output_0_ok: true,
       output_1_ok: true,
       output_2_ok: true,
+      permitted: false,
+      height: this.currentBtcHeight,
     };
 
     if (tx.outputs?.length !== 3) {
@@ -155,7 +179,12 @@ export class SecurityClient {
       verifiedTransfer.output_0_ok = false;
     }
 
-    this.vaultsBlocker.addVerifiedTransfer(verifiedTransfer);
+    verifiedTransfer.permitted = verifiedTransfer.output_0_ok && 
+      verifiedTransfer.output_1_ok && 
+      verifiedTransfer.output_2_ok && 
+      verifiedTransfer.output_length_ok;
+
+    return verifiedTransfer;
   };
 
   validateTransactions = async (txs: any[]) => {
@@ -175,9 +204,37 @@ export class SecurityClient {
 
     console.log('bridgeTxs: ', bridgeTxs.length);
 
+    const verifiedTxs = [];
+
     for (let i = 0; i < bridgeTxs.length; i++) {
-      await this.validateSingleTransaction(bridgeTxs[i].issue, bridgeTxs[i].tx);
+      const newVerifiedTransfer = await this.validateSingleTransaction(bridgeTxs[i].issue, bridgeTxs[i].tx);
+
+      const verifiedTransferIdx = verifiedTxs.findIndex(
+        vtx => vtx.transactionHash === newVerifiedTransfer.transactionHash
+      );
+
+      if(verifiedTransferIdx > -1) {
+        const issues = [...verifiedTxs[verifiedTransferIdx].issues];
+        issues.push(newVerifiedTransfer.issue.id);
+
+        if(!!newVerifiedTransfer.permitted) {
+          verifiedTxs[verifiedTransferIdx] = { ...newVerifiedTransfer, issues };
+        }
+        
+        verifiedTxs[verifiedTransferIdx].issues = issues;
+      } else {
+        verifiedTxs.push({ 
+          ...newVerifiedTransfer, 
+          issues: [newVerifiedTransfer.issue.id] 
+        });
+      }
     }
+
+    for(let i =0; i < verifiedTxs.length; i++) {
+      await this.vaultsBlocker.addSecurityCheck(verifiedTxs[i]);
+    }
+
+    return verifiedTxs.map(vtx => ({ ...vtx, tx: '', issue: '' }));
   };
 
   checkBlock = async () => {
@@ -192,9 +249,18 @@ export class SecurityClient {
 
       const fullBlockInfo = await getFullBlockByHeight(this.currentBtcHeight);
 
-      await this.validateTransactions(fullBlockInfo.txs);
+      const verifiedTxs = await this.validateTransactions(fullBlockInfo.txs);
 
       this.nodeBtcHeight = await getHeight();
+
+      this.updateOrCreateData({
+        height: this.currentBtcHeight,
+        totalTxsLength: fullBlockInfo.txs.length,
+        bridgeTxsLength: verifiedTxs.length,
+        verifiedTxs: verifiedTxs,
+        hasUnPermittedTxs: verifiedTxs.some(tx => !tx.permitted),
+        id: String(this.currentBtcHeight),
+      });
 
       if (this.nodeBtcHeight > this.currentBtcHeight) {
         this.currentBtcHeight = this.currentBtcHeight + 1;
@@ -219,7 +285,7 @@ export class SecurityClient {
       (this.nodeBtcHeight - this.startBtcHeight)
     ).toFixed(2);
 
-  getInfo = () => ({
+  getServiceInfo = () => ({
     security: {
       auditProgress: this.getProgress(),
       currentBtcHeight: this.currentBtcHeight,

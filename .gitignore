@@ -115,3 +115,5 @@ yarn.lock
 
 .idea
 mongodb/
+
+frontend
