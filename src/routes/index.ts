@@ -168,12 +168,32 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/monitor',
     asyncHandler(async (req, res) => {
-      const relayerClient = await services.relayerClient.getInfo();
-      const relayEvents = await services.relayEvents.getInfo();
+      let relayerClient = {
+        relayContractAddress: process.env.HMY_RELAY_CONTRACT,
+        network: process.env.NETWORK,
+        btcNodeUrl: process.env.BTC_NODE_URL,
+        hmyNodeUrl: process.env.HMY_NODE_URL,
+      }
+
+      let relayEvents = {};
+
+      let vaults = {};
+
+      if (services.relayerClient) {
+        relayerClient = await services.relayerClient.getInfo();
+      }
+
+      if (services.relayEvents) {
+        relayEvents = await services.relayEvents.getInfo();
+      }
+
+      if (services.vaults) {
+        vaults = await services.vaults.getInfo();
+      }
+
       const mainEvents = await services.onebtcEvents.getInfo();
       const issues = await services.issues.getInfo();
       const redeems = await services.redeems.getInfo();
-      const vaults = await services.vaults.getInfo();
 
       return res.json({
         relayerClient,
