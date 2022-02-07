@@ -3,7 +3,6 @@ FROM node:14
 WORKDIR /app
 
 ENV NODE_ENV mainnet
-ENV MODE base
 
 COPY ./src /app/src
 COPY package.json /app/package.json
