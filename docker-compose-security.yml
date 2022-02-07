@@ -1,0 +1,32 @@
+version: '3.7'
+
+services:
+  mongo-service:
+    image: mongo
+    restart: always
+    logging:
+      driver: none
+    volumes:
+      - ./mongodb/db:/data/db
+  vault:
+    container_name: "vault"
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    image: harmonyone/onebtc-vault:latest
+    restart: always
+    depends_on:
+      - "mongo-service"
+    ports:
+      - 3000:3000
+    volumes:
+      - ./keys:/app/keys
+    environment:
+      UI_PORT: "3000"
+      MODE: 'security'
+      BTC_NODE_URL: "https://btc.main.hmny.io"
+      HMY_NODE_URL: "https://api.harmony.one"
+      DASHBOARD_URL: "https://dashboard.btc.main.hmny.io"
+      DATABASE_URL: "mongodb://mongo-service:27017/MyDb"
+      DATABASE_NAME: "onebtc"
+      AWS_CONFIG_REGION: "us-west-1"
+      VAULT_CLIENT_WALLET: "env"
