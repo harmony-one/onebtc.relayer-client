@@ -9,7 +9,9 @@ import logger from '../../logger';
 import { IServices } from '../init';
 import EventEmitter = require('events');
 import {STATUS} from "./index";
-const log = logger.module('relay:Service');
+const log = logger.module('VaultsBlocker:main');
+
+import { DataLayerService, IssueRequest } from '../common';
 
 export interface ISecurityClient {
   dbCollectionName: string;
@@ -18,7 +20,21 @@ export interface ISecurityClient {
   services: IServices;
 }
 
-export class VaultsBlocker {
+export interface ISecurityCheck {
+  vault: string;
+  height: number;
+  btcAddress: string;
+  transactionHash: string;
+  output_length_ok: boolean;
+  output_0_ok: boolean;
+  output_1_ok: boolean;
+  output_2_ok: boolean;
+  issue: IssueRequest,
+  tx: any,
+  permitted: boolean;
+};
+
+export class VaultsBlocker extends DataLayerService<ISecurityCheck> {
   database: DBService;
   dbCollectionName = 'security';
 
@@ -34,6 +50,13 @@ export class VaultsBlocker {
   lastError = '';
 
   constructor(params: ISecurityClient) {
+    super({
+      database: params.services.database,
+      dbCollectionPrefix: params.dbCollectionName,
+      contractAddress: params.contractAddress,
+      contractAbi: abi,
+    });
+
     this.database = params.services.database;
     this.dbCollectionName = params.dbCollectionName;
 
@@ -74,11 +97,9 @@ export class VaultsBlocker {
     }
   }
 
-  freezeVault = (vaultAddress: string, transaction: any) => {
-    console.log('SECURITY ALERT: ', vaultAddress, transaction.hash)
-  };
+  addSecurityCheck = async (securityCheck: ISecurityCheck) => {
+    log.info('SECURITY ALERT: ', { ...securityCheck, tx: '', issue: '' });
 
-  addVerifiedTransfer = (transaction: any) => {
-    console.log('SECURITY ALERT: ', transaction)
+    await this.updateOrCreateData({ ...securityCheck, id: securityCheck.transactionHash });
   };
 }
