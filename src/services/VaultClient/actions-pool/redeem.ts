@@ -25,7 +25,11 @@ export const redeem = (
 
   const waitingConfirmations = new Action({
     type: ACTION_TYPE.waitingConfirmations,
-    callFunction: () => waitTxForConfirmations(transferBTC.payload.transactionHash, 2),
+    callFunction: async () => {
+      await wallet.waitRelayerSynchronization();
+
+      return await waitTxForConfirmations(transferBTC.payload.transactionHash, 2);
+    }
   });
 
   const executeRedeem = new Action({

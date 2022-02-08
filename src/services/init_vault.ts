@@ -3,6 +3,7 @@ import { databaseService, DBService } from './database';
 import { abi as oneBtcAbi } from '../abi/OneBtc';
 import { LogEvents, IssueService } from './Dashboard';
 import { VaultClient } from './VaultClient';
+import { RelayerClient } from './Relayer';
 import {VaultSettingService} from "./VaultClient/VaultSettings/VaultSettings";
 
 export interface IServices {
@@ -12,6 +13,7 @@ export interface IServices {
   redeems?: IssueService;
   vaultDbSettings?: VaultSettingService;
   vaultClient?: VaultClient;
+  relayerClient?: RelayerClient;
 }
 
 export const InitVault = async (): Promise<IServices> => {
@@ -29,6 +31,15 @@ export const InitVault = async (): Promise<IServices> => {
   });
 
   await services.vaultDbSettings.start();
+
+  services.relayerClient = new RelayerClient({
+    database: databaseService,
+    dbCollectionName: 'relay-headers',
+    relayContractAddress: process.env.HMY_RELAY_CONTRACT,
+    readonly: true,
+  });
+
+  await services.relayerClient.start();
 
   services.vaultClient = new VaultClient({
     database: databaseService,

@@ -48,6 +48,12 @@ export class WalletBTC {
     this.btcPrivateKey = convertBtcKeyToHex(btcPrivateKey);
   };
 
+  waitRelayerSynchronization = async () => {
+    while(!this.services.relayerClient.isSynced()){
+      await sleep(2000);
+    }    
+  }
+
   getAmountFromTx = (txObj: any, address: string) => {
     const output = txObj.outputs.find(out => out.address === address);
     return output ? output.value : 0;

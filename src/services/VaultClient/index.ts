@@ -254,6 +254,13 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
       contract: this.contractAddress,
       balances,
       operations,
+      relayer: {
+        isRelayerSynced: this.services.relayerClient.isSynced(),
+        status: String(this.services.relayerClient.status),
+        currentBtcHeight: this.services.relayerClient.btcLastBlock,
+        nodeBtcHeight: this.services.relayerClient.nodeLastBlock,
+        contract: this.services.relayerClient.relayContractAddress,
+      },
     };
   };
 
