@@ -1,6 +1,10 @@
 import { asyncHandler, parseSort } from './helpers';
 import { IServices } from '../services/init';
 
+export enum MANAGER_ACTION {
+  RESET = 'reset',
+}
+
 export const routes = (app, services: IServices) => {
   app.get(
     '/relay/height',
@@ -173,12 +177,32 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/monitor',
     asyncHandler(async (req, res) => {
-      const relayerClient = await services.relayerClient.getInfo();
-      const relayEvents = await services.relayEvents.getInfo();
+      let relayerClient = {
+        relayContractAddress: process.env.HMY_RELAY_CONTRACT,
+        network: process.env.NETWORK,
+        btcNodeUrl: process.env.BTC_NODE_URL,
+        hmyNodeUrl: process.env.HMY_NODE_URL,
+      }
+
+      let relayEvents = {};
+
+      let vaults = {};
+
+      if (services.relayerClient) {
+        relayerClient = await services.relayerClient.getInfo();
+      }
+
+      if (services.relayEvents) {
+        relayEvents = await services.relayEvents.getInfo();
+      }
+
+      if (services.vaults) {
+        vaults = await services.vaults.getInfo();
+      }
+
       const mainEvents = await services.onebtcEvents.getInfo();
       const issues = await services.issues.getInfo();
       const redeems = await services.redeems.getInfo();
-      const vaults = await services.vaults.getInfo();
 
       return res.json({
         relayerClient,
@@ -272,6 +296,88 @@ export const routes = (app, services: IServices) => {
       );
 
       res.send(data);
+    })
+  );
+
+  app.get(
+    '/security/info',
+    asyncHandler(async (req, res) => {
+      const data = await services.securityClient.getServiceInfo();
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/security/blocks',
+    asyncHandler(async (req, res) => {
+      const { size = 50, page = 0, height, hasUnPermittedTxs, id } = req.query;
+
+      const data = await services.securityClient.getData({
+        size,
+        page,
+        sort: { timestamp: -1 },
+        filter: {
+          height,
+          hasUnPermittedTxs,
+          id,
+        },
+      });
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/security/txs',
+    asyncHandler(async (req, res) => {
+      const { 
+        size = 50, 
+        page = 0, 
+        height, 
+        btcAddress, 
+        permitted, 
+        transactionHash, 
+        vault 
+      } = req.query;
+
+      const data = await services.vaultsBlocker.getData({
+        size,
+        page,
+        sort: { timestamp: -1 },
+        filter: {
+          height, 
+          btcAddress, 
+          permitted, 
+          transactionHash, 
+          vault 
+        },
+      });
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.post(
+    '/manage/actions/:action',
+    asyncHandler(async (req, res) => {
+      const { action } = req.params;
+      const { secret, ...otherParams } = req.body;
+
+      // await checkAuth(secret, services.database);
+
+      let result;
+
+      switch (action) {
+        case MANAGER_ACTION.RESET:
+          result = await services.vaultClient.resetOperation(otherParams.operationId);
+          break;
+      }
+
+      return res.json({ result, status: true });
     })
   );
 };

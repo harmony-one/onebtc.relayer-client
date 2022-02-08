@@ -6,7 +6,7 @@ import {
   IssueRequestEvent,
   RedeemRequest,
 } from '../common';
-import { IServices } from '../init';
+import { IServices } from '../init_vault';
 import { IOperationInitParams, Operation } from './Operation';
 import { OPERATION_TYPE, STATUS } from './interfaces';
 import { WalletBTC } from './WalletBTC';
@@ -15,6 +15,9 @@ import logger from '../../logger';
 import { bn } from '../../utils';
 import { Buffer } from 'buffer';
 import axios from 'axios';
+import {checkAndInitDbPrivateKeys} from "./load-keys/database";
+import {loadKey, WALLET_TYPE} from "./load-keys";
+import { createError } from "../../routes/helpers";
 
 const bitcoin = require('bitcoinjs-lib');
 
@@ -54,20 +57,41 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
   async start() {
     try {
+      if (process.env.VAULT_CLIENT_WALLET === WALLET_TYPE.DATABASE) {
+        await checkAndInitDbPrivateKeys(this.services.vaultDbSettings);
+      }
+
+      const hmyPrivateKey = await loadKey({
+        awsKeyFile: 'hmy-secret',
+        envKey: 'HMY_VAULT_PRIVATE_KEY',
+        dbKey: 'hmyPrivateKey',
+        name: 'Harmony',
+        services: this.services,
+      });
+
+      const btcPrivateKey = await loadKey({
+        awsKeyFile: 'btc-secret',
+        envKey: 'BTC_VAULT_PRIVATE_KEY',
+        dbKey: 'btcPrivateKey',
+        name: 'BTC',
+        services: this.services,
+      });
+
       this.hmyContractManager = new HmyContractManager({
         contractAddress: this.contractAddress,
         contractAbi: this.contractAbi,
         nodeUrl: process.env.HMY_NODE_URL,
+        database: this.services.database,
       });
 
-      await this.hmyContractManager.init();
+      await this.hmyContractManager.init(hmyPrivateKey);
 
       this.walletBTC = new WalletBTC({
         services: this.services,
         vaultId: this.hmyContractManager.masterAddress,
       });
 
-      await this.walletBTC.init();
+      await this.walletBTC.init(btcPrivateKey);
 
       this.eventEmitter.on(`ADD_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
 
@@ -100,7 +124,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     const res = await this.getData({
       size: 1000,
       page: 0,
-      filter: { status: 'in_progress' },
+      // filter: { status: 'in_progress' },
       sort: { timestamp: -1 },
     });
 
@@ -125,6 +149,45 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
       this.operations.push(operation);
     });
+  };
+
+  resetOperation = async (id: string) => {
+    const operation = this.operations.find(o => o.id === id);
+
+    if (operation && operation.status === STATUS.ERROR) {
+      const newOperationObj: any = operation.toObject({ payload: true });
+
+      newOperationObj.status = STATUS.IN_PROGRESS;
+      newOperationObj.wasRestarted = newOperationObj.wasRestarted
+        ? Number(newOperationObj.wasRestarted) + 1
+        : 1;
+
+      newOperationObj.actions = newOperationObj.actions.map(a => ({
+        ...a,
+        status: STATUS.WAITING,
+      }));
+
+      this.operations = this.operations.filter(o => o.id !== id);
+
+      const newOperation = new Operation();
+
+      await newOperation.asyncConstructor(
+        {
+          ...newOperationObj,
+        },
+        this.saveOperationToDB,
+        this.walletBTC,
+        this.hmyContractManager
+      );
+  
+      await this.saveOperationToDB(newOperation);
+
+      this.operations.push(newOperation);
+
+      return newOperation.toObject();
+    } else {
+      throw createError(404, 'Operation not found');
+    }
   };
 
   createOperation = async (params: IOperationInitParams) => {

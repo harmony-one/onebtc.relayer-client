@@ -50,9 +50,9 @@ export class OracleClient {
 
   async start() {
     try {
-      if (process.env.HMY_ORACLE_PRIVATE_KEY) {
+      if (process.env.HMY_RELAY_PRIVATE_KEY) {
         let ethMasterAccount = this.web3.eth.accounts.privateKeyToAccount(
-          process.env.HMY_ORACLE_PRIVATE_KEY
+          process.env.HMY_RELAY_PRIVATE_KEY
         );
 
         this.web3.eth.accounts.wallet.add(ethMasterAccount);
@@ -83,18 +83,25 @@ export class OracleClient {
       res = await axios.get('https://api.binance.com/api/v1/ticker/price?symbol=ONEUSDT');
       const onePrice = res.data.price;
 
-      await this.oracleContract.methods
-        .setExchangeRate(new BN(btcPrice * 1e8), new BN(onePrice * 1e8))
-        .send({
-          from: this.ethMasterAccount,
-          gas: process.env.HMY_GAS_LIMIT,
-          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
-        });
+      const oldPrice = this.lastPrice.btcPrice ? (this.lastPrice.onePrice / this.lastPrice.btcPrice) : 0;
+      const delta = oldPrice / 200;
+      
+      const newPrice = (onePrice / btcPrice);
+      
+      if(Math.abs(newPrice - oldPrice) > delta) {
+        await this.oracleContract.methods
+          .setExchangeRate(new BN(btcPrice * 1e8), new BN(onePrice * 1e8))
+          .send({
+            from: this.ethMasterAccount,
+            gas: process.env.HMY_GAS_LIMIT,
+            gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
+          });
 
-      this.lastPrice = {
-        btcPrice,
-        onePrice,
-      };
+        this.lastPrice = {
+          btcPrice,
+          onePrice,
+        };
+      }
     } catch (e) {
       log.error('Error to syncPrice', { error: e, exchangeRate: this.lastPrice });
       this.lastError = e && e.message;

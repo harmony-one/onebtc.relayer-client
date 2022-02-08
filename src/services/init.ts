@@ -7,6 +7,8 @@ import { RelayerClient } from './Relayer';
 import { VaultClient } from './VaultClient';
 import { HistoryService } from './History';
 import {OracleClient} from "./OracleClient";
+import {VaultsBlocker} from "./SecurityClient/VaultsBlocker";
+import {SecurityClient} from "./SecurityClient";
 
 export interface IServices {
   relayerClient?: RelayerClient;
@@ -19,6 +21,8 @@ export interface IServices {
   issues?: IssueService;
   redeems?: IssueService;
   history?: HistoryService;
+  vaultsBlocker?: VaultsBlocker;
+  securityClient?: SecurityClient;
 }
 
 export const InitServices = async (): Promise<IServices> => {
@@ -44,8 +48,8 @@ export const InitServices = async (): Promise<IServices> => {
     oracleContractAddress: process.env.HMY_ORACLE_CONTRACT,
   });
 
-  if (process.env.HMY_ORACLE_PRIVATE_KEY) {
-    // await services.oracleClient.start();
+  if (process.env.HMY_RELAY_PRIVATE_KEY) {
+    await services.oracleClient.start();
   }
 
   services.vaultClient = new VaultClient({

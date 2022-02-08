@@ -22,7 +22,7 @@ services:
       - ./keys:/app/keys
     environment:
       UI_PORT: "3000"
-      MODE: 'vault'
+      MODE: 'security'
       BTC_NODE_URL: "https://btc.main.hmny.io"
       HMY_NODE_URL: "https://api.harmony.one"
       DASHBOARD_URL: "https://dashboard.btc.main.hmny.io"
