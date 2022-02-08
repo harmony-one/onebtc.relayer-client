@@ -114,6 +114,6 @@ package-lock.json
 yarn.lock
 
 .idea
-mongodb/
 
-frontend
+mongodb/
+frontend/

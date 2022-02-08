@@ -10,3 +10,19 @@ export const createError = (status: number, message: string): TExtendError => {
 
   return error;
 };
+
+export const parseSort = (sort: string, defaultSort: {[key: string]: 1 | -1}) => {
+  if (!sort) {
+    return defaultSort;
+  }
+
+  const [field, direction] = sort.split(',');
+
+  if (!field) {
+    return defaultSort;
+  }
+
+  const dir = direction === 'asc' ? 1 : -1;
+
+  return {[field]: dir};
+}
