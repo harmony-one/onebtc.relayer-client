@@ -152,6 +152,7 @@ export class RelayerClient {
   isSynced = () => this.btcLastBlock === this.nodeLastBlock;
 
   getInfo = () => ({
+    synced: this.isSynced(),
     height: this.btcLastBlock,
     readonly: this.readonly,
     status: this.status,
