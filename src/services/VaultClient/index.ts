@@ -124,7 +124,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     const res = await this.getData({
       size: 1000,
       page: 0,
-      filter: { status: 'in_progress' },
+      // filter: { status: 'in_progress' },
       sort: { timestamp: -1 },
     });
 
