@@ -17,6 +17,7 @@ import { Buffer } from 'buffer';
 import axios from 'axios';
 import {checkAndInitDbPrivateKeys} from "./load-keys/database";
 import {loadKey, WALLET_TYPE} from "./load-keys";
+import { createError } from "../../routes/helpers";
 
 const bitcoin = require('bitcoinjs-lib');
 
@@ -148,6 +149,45 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
       this.operations.push(operation);
     });
+  };
+
+  resetOperation = async (id: string) => {
+    const operation = this.operations.find(o => o.id === id);
+
+    if (operation && operation.status === STATUS.ERROR) {
+      const newOperationObj: any = operation.toObject({ payload: true });
+
+      newOperationObj.status = STATUS.IN_PROGRESS;
+      newOperationObj.wasRestarted = newOperationObj.wasRestarted
+        ? Number(newOperationObj.wasRestarted) + 1
+        : 1;
+
+      newOperationObj.actions = newOperationObj.actions.map(a => ({
+        ...a,
+        status: STATUS.WAITING,
+      }));
+
+      this.operations = this.operations.filter(o => o.id !== id);
+
+      const newOperation = new Operation();
+
+      await newOperation.asyncConstructor(
+        {
+          ...newOperationObj,
+        },
+        this.saveOperationToDB,
+        this.walletBTC,
+        this.hmyContractManager
+      );
+  
+      await this.saveOperationToDB(newOperation);
+
+      this.operations.push(newOperation);
+
+      return newOperation.toObject();
+    } else {
+      throw createError(404, 'Operation not found');
+    }
   };
 
   createOperation = async (params: IOperationInitParams) => {

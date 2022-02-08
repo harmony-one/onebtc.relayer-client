@@ -1,6 +1,10 @@
 import { asyncHandler } from './helpers';
 import { IServices } from '../services/init';
 
+export enum MANAGER_ACTION {
+  RESET = 'reset',
+}
+
 export const routes = (app, services: IServices) => {
   app.get(
     '/relay/height',
@@ -347,6 +351,26 @@ export const routes = (app, services: IServices) => {
 
       res.header('Content-Type', 'application/json');
       res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.post(
+    '/manage/actions/:action',
+    asyncHandler(async (req, res) => {
+      const { action } = req.params;
+      const { secret, ...otherParams } = req.body;
+
+      // await checkAuth(secret, services.database);
+
+      let result;
+
+      switch (action) {
+        case MANAGER_ACTION.RESET:
+          result = await services.vaultClient.resetOperation(otherParams.operationId);
+          break;
+      }
+
+      return res.json({ result, status: true });
     })
   );
 };
