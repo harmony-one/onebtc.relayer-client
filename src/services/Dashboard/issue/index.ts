@@ -84,7 +84,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
       this.eventEmitter.emit(`ADD_${this.eventName}`, issue);
 
-      if (issue.status === '1') {
+      if (issue.status === '1' || issue.status === '0') {
         this.observableData.set(id, issue);
       }
     } catch (e) {

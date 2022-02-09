@@ -8,6 +8,7 @@ export const errorResponse = [
   'was not mined within 750 seconds',
   'The transaction is still not confirmed after 20 attempts',
   'replacement transaction underpriced',
+  'Client network socket disconnected before secure TLS connection was established',
 ].map(text => text.toLowerCase());
 
 export const rpcErrorMessage = error => {
