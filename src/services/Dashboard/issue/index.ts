@@ -75,7 +75,13 @@ export class IssueService extends DataLayerService<IssueRequest> {
       const emb = bitcoin.payments.embed({ data: [new BN(id).toBuffer()] });
       const script = emb.output.toString('hex');
 
-      const issue = { ...issueInfo, id, script };
+      let issue;
+
+      if(issueInfo.status === '0') {
+        issue = { ...issueInfo, requester, id, script, btcAddress, amount };
+      } else {
+        issue = { ...issueInfo, requester, id, script };
+      }
 
       if (this.listenTxs) {
         switch (this.idEventKey) {
@@ -108,7 +114,14 @@ export class IssueService extends DataLayerService<IssueRequest> {
           const { requester, id } = item;
 
           const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
-          const issueUpd = { ...issueInfo, id };
+          
+          let issueUpd;
+
+          if(issueInfo.status === '0') {
+            issueUpd = { ...item, requester, id };
+          } else {
+            issueUpd = { ...issueInfo, requester, id };
+          }
 
           if (this.listenTxs) {
             const { btcAddress, amount } = issueUpd;
@@ -127,7 +140,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
           this.eventEmitter.emit(`UPDATE_${this.eventName}`, issueUpd);
 
-          if (issueUpd.status !== '1') {
+          if (issueUpd.status !== '1' && issueUpd.status !== '0') {
             this.observableData.delete(id);
           }
         } catch (e) {
