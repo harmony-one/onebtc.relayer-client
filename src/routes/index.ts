@@ -380,4 +380,14 @@ export const routes = (app, services: IServices) => {
       return res.json({ result, status: true });
     })
   );
+
+  app.post(
+    '/events/add-by-hash',
+    asyncHandler(async (req, res) => {
+      const data = await services.onebtcEvents.addEventFromTx(req.body.hash);
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
 };

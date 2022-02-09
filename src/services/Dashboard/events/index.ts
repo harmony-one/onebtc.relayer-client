@@ -1,9 +1,16 @@
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils/types';
 import { DBService } from '../../database';
-import { getContractDeploymentBlock, getEventsAbi, getHmyLogs } from './api';
+import { 
+  getContractDeploymentBlock, 
+  getEventsAbi, 
+  getHmyLogs,
+  getHmyTransactionReceipt,
+  getHmyTransactionByHash 
+} from './api';
 import EventEmitter = require('events');
 import { IEvent } from '../../common';
+import { rpcErrorMessage } from '../../../harmony/helpers';
 
 import logger from '../../../logger';
 const log = logger.module('logEvents:main');
@@ -161,6 +168,82 @@ export class LogEvents {
 
     setTimeout(this.readEvents, this.waitInterval);
   };
+
+  getTransactionReceipt = async txnHash => {
+    try {
+      const res: any = await getHmyTransactionReceipt(txnHash);
+
+      if (!res) {
+        return res;
+      }
+
+      const txInfoRes = await getHmyTransactionByHash(txnHash);
+
+      return {
+        ...res,
+        ...txInfoRes,
+        status: res.status === 1,
+        hash: txInfoRes?.hash || res.transactionHash,
+      };
+    } catch (e) {
+      if (rpcErrorMessage(e)) {
+        log.error('getTransactionReceipt exception rpcErrorMessage', { txnHash, error: e });
+
+        await sleep(10000);
+
+        return await this.getTransactionReceipt(txnHash);
+      } else {
+        throw e;
+      }
+    }
+  };
+
+  getEventsFromLogs = (logs: any[]) => {
+    const events = [];
+
+    for (let i = 0; i < logs.length; i++) {
+      const item = logs[i];
+      const topic = item.topics[0].toLowerCase();
+      const abiItem = this.abiEvents[topic];
+
+      if (abiItem) {
+        const returnValues = this.web3.eth.abi.decodeLog(
+          abiItem.inputs,
+          item.data,
+          item.topics.slice(1)
+        );
+
+        events.push({
+          ...item,
+          name: abiItem.name,
+          returnValues,
+          blockNumber: Number(item.blockNumber),
+        });
+      }
+    }
+
+    return events;
+  }
+
+  addEventFromTx= async (hash: string) => {
+    const tx = await this.getTransactionReceipt(hash);
+    
+    if(!tx) {
+      return false;
+    }
+
+    const events = this.getEventsFromLogs(tx.logs);
+
+    if (events.length) {
+      // save events to DB
+      await this.addIfNotFoundMany(events);
+
+      // send events to other services via eventsEmitter
+      events.forEach(event => this.eventEmitter.emit(event.name, event));
+    }
+
+    return events;
+  }
 
   getProgress = () =>
     ((this.lastBlock - this.startBlock) / (this.lastNodeBlock - this.startBlock)).toFixed(2);
