@@ -111,8 +111,11 @@ export class RelayerClient {
 
   syncBlockHeader = async () => {
     try {
-      const btcHeight = await getHeight();
-      if (btcHeight > this.btcLastBlock) {
+      const res = await this.relayContract.methods.getBestBlock().call();
+      this.btcLastBlock = Number(res.height);
+      this.nodeLastBlock = await getHeight();
+
+      if (this.nodeLastBlock > this.btcLastBlock) {
         const block = await getBlockByHeight(this.btcLastBlock + 1);
 
         await this.relayContract.methods.submitBlockHeader('0x' + block.toHex(true)).send({
@@ -130,16 +133,6 @@ export class RelayerClient {
     } catch (e) {
       log.error('Error to get new Header', { error: e, btcLastBlock: this.btcLastBlock });
       this.lastError = e && e.message;
-      
-      try {
-        const res = await this.relayContract.methods.getBestBlock().call();
-        this.btcLastBlock = Number(res.height);
-      } catch (e) {
-        this.lastError = e && e.message;
-      }
-
-      const res = await this.relayContract.methods.getBestBlock().call();
-      this.btcLastBlock = Number(res.height);
 
       await sleep(process.env.SYNC_INTERVAL);
     }
