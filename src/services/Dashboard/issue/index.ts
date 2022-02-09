@@ -45,6 +45,14 @@ export class IssueService extends DataLayerService<IssueRequest> {
         sort: { opentime: -1 },
       });
 
+      const dataWait = await this.getData({
+        size: 1000,
+        page: 0,
+        filter: { status: '0' },
+        sort: { opentime: -1 },
+      });
+
+      dataWait.content.forEach(item => this.observableData.set(item.id, item));
       data.content.forEach(item => this.observableData.set(item.id, item));
 
       setTimeout(this.syncData, 100);
