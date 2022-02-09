@@ -286,11 +286,18 @@ export const routes = (app, services: IServices) => {
       const { size = 50, page = 0, step = 'h' } = req.query;
       const { collection } = req.params;
 
+      const collections = {
+        'vaults': 'vaults',
+        'redeemed': 'redeemed_new',
+        'issued': 'issued_new',
+      }
+
       const data = await services.history.getHistoryData(
         {
           size,
           page,
-          collectionName: `history_${collection}`,
+          sort: { dateTimestamp: -1 },
+          collectionName: `history_${collections[collection]}`,
         },
         step
       );

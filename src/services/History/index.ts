@@ -41,7 +41,7 @@ export class HistoryService extends DataLayerService<any> {
     this.redeemSyncConfig = {
       getData: this.services.redeems.getData,
       field: 'amountBtc',
-      dbCollection: 'redeemed',
+      dbCollection: 'redeemed_new',
       totalAmount: 0,
       lastSyncDate: 0,
     };
@@ -49,7 +49,7 @@ export class HistoryService extends DataLayerService<any> {
     this.issueSyncConfig = {
       getData: this.services.issues.getData,
       field: 'amount',
-      dbCollection: 'issued',
+      dbCollection: 'issued_new',
       totalAmount: 0,
       lastSyncDate: 0,
     };
@@ -81,7 +81,11 @@ export class HistoryService extends DataLayerService<any> {
       let current = config.lastSyncDate;
 
       if (!current) {
-        const res = await config.getData({ size: 1, sort: { opentime: 1 } });
+        const res = await config.getData({ 
+          size: 1, 
+          sort: { opentime: 1 }, 
+          filter: { status: '2' } 
+        });
 
         if(!res.content[0]) {
           return;
@@ -108,7 +112,7 @@ export class HistoryService extends DataLayerService<any> {
         await this.database.update(
           collection,
           { date },
-          { amountPerDay, total: config.totalAmount, date }
+          { amountPerDay, total: config.totalAmount, date, dateTimestamp: current }
         );
 
         current = end;
