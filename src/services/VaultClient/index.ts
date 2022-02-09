@@ -94,6 +94,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
       await this.walletBTC.init(btcPrivateKey);
 
       this.eventEmitter.on(`ADD_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
+      this.eventEmitter.on(`UPDATE_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
 
       this.status = RELAYER_STATUS.LAUNCHED;
 
