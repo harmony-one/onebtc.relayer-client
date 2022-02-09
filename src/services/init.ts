@@ -36,11 +36,10 @@ export const InitServices = async (): Promise<IServices> => {
     database: databaseService,
     dbCollectionName: 'relay-headers',
     relayContractAddress: process.env.HMY_RELAY_CONTRACT,
+    readonly: !process.env.HMY_RELAY_PRIVATE_KEY, 
   });
-
-  if (process.env.HMY_RELAY_PRIVATE_KEY) {
-    await services.relayerClient.start();
-  }
+  
+  await services.relayerClient.start();
 
   services.oracleClient = new OracleClient({
     database: databaseService,
