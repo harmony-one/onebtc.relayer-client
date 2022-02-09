@@ -296,7 +296,7 @@ export const routes = (app, services: IServices) => {
         {
           size,
           page,
-          sort: { dateTimestamp: 1 },
+          sort: { dateTimestamp: -1 },
           collectionName: `history_${collections[collection]}`,
         },
         step
