@@ -74,6 +74,7 @@ export class LogEvents {
 
       if (req.content.length) {
         this.lastBlock = req.content[0].blockNumber;
+        this.lastBlock = Number(this.lastBlock) - 50000; //reload last 24h on restart
       }
 
       setTimeout(this.readEvents, 100);
