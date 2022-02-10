@@ -80,12 +80,30 @@ export const routes = (app, services: IServices) => {
     })
   );
 
+
+  interface VaultFilters {
+    collateral?: { '$ne': string },
+    lastPing?: { '$gte': number },
+  }
+
   app.get(
     '/vaults/data',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0, id, sort } = req.query;
-      const sorting = parseSort(sort, {lastUpdate: -1});
-      const data = await services.vaults.getData({ size, page, id, sort: sorting });
+      const { size = 50, page = 0, id, sort, hasCollateral, online } = req.query;
+
+      const sorting = parseSort(sort, {collateral: -1, lastUpdate: -1});
+
+      const filter: VaultFilters = {};
+
+      if (hasCollateral) {
+        filter.collateral = {'$ne': '0'};
+      }
+
+      if (online) {
+        filter.lastPing = {'$gte': Date.now() - 1000 * 60 * 5 } // 5 min
+      }
+
+      const data = await services.vaults.getData({ size, page, id, sort: sorting, filter});
       return res.json(data);
     })
   );
