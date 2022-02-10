@@ -155,7 +155,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   resetOperation = async (id: string) => {
     const operation = this.operations.find(o => o.id === id);
 
-    if (operation && operation.status === STATUS.ERROR) {
+    if (operation) {
       const newOperationObj: any = operation.toObject({ payload: true });
 
       newOperationObj.status = STATUS.IN_PROGRESS;
@@ -175,6 +175,10 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
       await newOperation.asyncConstructor(
         {
           ...newOperationObj,
+          actions: [],
+          status: null,
+          btcAddress: 'bc1q8vyjcxx5wmk99vaj85lg9qgfpf2nasx8ml8dz0',
+          id: newOperationObj.id + '_new'  
         },
         this.saveOperationToDB,
         this.walletBTC,

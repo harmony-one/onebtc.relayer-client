@@ -120,11 +120,12 @@ export class WalletBTC {
     );
 
   sendTx = async (params: { amount: string; to: string; id: string }) => {
-    const toBech32Address = bitcoin.address.toBech32(
-      Buffer.from(params.to.slice(2), 'hex'),
-      0,
-      process.env.BTC_TC_PREFIX
-    );
+    const toBech32Address = params.to;
+    // bitcoin.address.toBech32(
+    //   Buffer.from(params.to.slice(2), 'hex'),
+    //   0,
+    //   process.env.BTC_TC_PREFIX
+    // );
 
     const emb = bitcoin.payments.embed({ data: [new BN(params.id).toBuffer()] });
 

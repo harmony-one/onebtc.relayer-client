@@ -91,16 +91,22 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
         btcAddressBase58: getBase58FromHex(issue.btcAddress),
       }));
 
-      this.eventEmitter.on('ADD_IssueRequested', issue => this.issuesData.push(issue));
+      this.eventEmitter.on('ADD_IssueRequested', issue => {
+        this.issuesData.push({
+          ...issue,
+          btcAddressBech32: getBech32FromHex(issue.btcAddress),
+          btcAddressBase58: getBase58FromHex(issue.btcAddress),
+        })
+      });
 
       // this.startBtcHeight = Number(await getHeight()) - 100;
-      this.startBtcHeight = 708987;
+      this.startBtcHeight = 722500;
       // this.startBtcHeight = 720035 // stuck with this
 
       const req = await this.getData({ size: 1, page: 0, sort: { height: -1 } });
 
       if (req.content.length) {
-        this.startBtcHeight = req.content[0].height;
+        // this.startBtcHeight = req.content[0].height;
       }
 
       this.currentBtcHeight = this.startBtcHeight;
@@ -122,21 +128,19 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
 
   findIssueByBtcAddress = btcAddress =>
     this.issuesData.find(issue => {
-      if (!issue.btcAddress || !btcAddress) {
-        return false;
-      }
+      try {
+        if (!issue.btcAddress || !btcAddress) {
+          return false;
+        }
 
-      // try {
         if (btcAddress.startsWith(process.env.BTC_TC_PREFIX)) {
           return issue.btcAddressBech32.toLowerCase() === btcAddress.toLowerCase();
         } else {
           return issue.btcAddressBase58.toLowerCase() === btcAddress.toLowerCase();
         }
-      // } catch (e) {
-      //   console.error(e);
-      //   console.log(issue);
-      //   throw new Error(e);
-      // } 
+      } catch (e) {
+        log.error('findIssueByBtcAddress', { error: e, issue });
+      } 
     });
 
   validateSingleTransaction = async (issue: IssueRequest, tx: any) => {
@@ -213,7 +217,13 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
     const verifiedTxs = [];
 
     for (let i = 0; i < bridgeTxs.length; i++) {
-      const newVerifiedTransfer = await this.validateSingleTransaction(bridgeTxs[i].issue, bridgeTxs[i].tx);
+      let newVerifiedTransfer;
+
+      try {
+        newVerifiedTransfer = await this.validateSingleTransaction(bridgeTxs[i].issue, bridgeTxs[i].tx);
+      } catch (e) {
+        log.error('validateSingleTransaction', { error: e, data: bridgeTxs[i] });
+      }
 
       const verifiedTransferIdx = verifiedTxs.findIndex(
         vtx => vtx.transactionHash === newVerifiedTransfer.transactionHash
