@@ -279,11 +279,30 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
   pingDashboard = async () => {
     try {
+      const operations = await this.getInfo();
+      
+      const failedOperations = await this.getData({ filter: { status: 'error' } });
+
+      const eventsInfo = await this.services.onebtcEvents.getInfo();
+      const synchronized = parseInt(eventsInfo.progress) === 1;
+
+      const info = {
+        version: "0.0.8",
+        synchronized,
+        syncProgress: eventsInfo.progress,
+        status: this.status,
+        vaultAddress: this.hmyContractManager.masterAddress,
+        contract: this.contractAddress,
+        operations,
+        failedOperations: failedOperations.totalElements,
+      };
+
       await axios.post(`${process.env.DASHBOARD_URL}/monitor/ping`, {
         vault: this.hmyContractManager.masterAddress,
+        info
       });
     } catch (e) {
-      // log.error('Error ping dashboard', { error: e });
+      log.error('Error ping dashboard', { error: e });
     }
   };
 }
