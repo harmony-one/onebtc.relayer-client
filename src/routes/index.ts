@@ -415,4 +415,14 @@ export const routes = (app, services: IServices) => {
       res.send(JSON.stringify(data, null, 4));
     })
   );
+
+  app.get(
+    '/security/validate/:hash',
+    asyncHandler(async (req, res) => {
+      const data = await services.securityClient.validateTransaction(req.params.hash);
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
 };

@@ -71,7 +71,7 @@ export const InitSecurity = async (): Promise<IServices> => {
   await services.relayer.start();
 
   services.vaultsBlocker = new VaultsBlocker({
-    dbCollectionName: 'security-txs',
+    dbCollectionName: 'security-txs-1',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     eventEmitter,
     services,
@@ -80,7 +80,7 @@ export const InitSecurity = async (): Promise<IServices> => {
   await services.vaultsBlocker.start();
 
   services.securityClient = new SecurityClient({
-    dbCollectionName: 'security-blocks',
+    dbCollectionName: 'security-blocks-1',
     eventEmitter,
     database: services.database,
     onebtcEvents: services.onebtcEvents,

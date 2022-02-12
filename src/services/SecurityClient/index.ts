@@ -1,5 +1,5 @@
 import { DBService } from '../database';
-import { getFullBlockByHeight, getHeight } from '../../bitcoin/rpc';
+import { getFullBlockByHeight, getHeight, getTransactionByHash } from '../../bitcoin/rpc';
 
 import logger from '../../logger';
 import { sleep } from '../../utils';
@@ -143,9 +143,25 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       // } 
     });
 
+  validateTransaction = async (hash: string) => {
+    const tx = await getTransactionByHash(hash);
+
+    let issue;
+
+    tx.inputs.forEach(input => {
+      const res = this.findIssueByBtcAddress(input.coin?.address);
+
+      if(res) {
+        issue = res;
+      }
+    });
+
+    return await this.validateSingleTransaction(issue, tx);
+  };
+
   validateSingleTransaction = async (issue: IssueRequest, tx: any) => {
     const verifiedTransfer = {
-      issue,
+      issueId: issue.id,
       tx,
       vault: issue.vault,
       btcAddress: issue.btcAddress,
@@ -157,8 +173,8 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       permitted: false,
       height: this.currentBtcHeight,
       notDoublePayment: true,
-      script: '',
-      redeem: '',
+      redeemScript: '',
+      redeemId: '',
     };
 
     if (tx.outputs?.length !== 3) {
@@ -179,13 +195,13 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       if (!redeem) {
         verifiedTransfer.output_2_ok = false;
       } else {
-        verifiedTransfer.redeem = redeem.id;
+        verifiedTransfer.redeemId = redeem.id;
       }
 
       if(tx.outputs[2].script) {
-        verifiedTransfer.script = tx.outputs[2].script;
+        verifiedTransfer.redeemScript = tx.outputs[2].script;
 
-        req = await this.vaultsBlocker.getData({ filter: { script: tx.outputs[2].script } });
+        req = await this.vaultsBlocker.getData({ filter: { redeemScript: tx.outputs[2].script } });
         const isRedeemAlreadyUsing = !!req.content[0];
 
         if(isRedeemAlreadyUsing) {
@@ -197,7 +213,9 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
     }
 
     //check other outputs
-    if (getBech32Unify(tx.outputs[1]?.address) !== getBech32FromHex(issue.btcAddress)) {
+    const outpuIssue = this.findIssueByBtcAddress(getBech32Unify(tx.outputs[1]?.address));
+
+    if (!outpuIssue || outpuIssue.vault !== issue.vault) {
       verifiedTransfer.output_1_ok = false;
     }
 
@@ -245,29 +263,7 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
 
     for (let i = 0; i < bridgeTxs.length; i++) {
       const newVerifiedTransfer = await this.validateSingleTransaction(bridgeTxs[i].issue, bridgeTxs[i].tx);
-
-      const verifiedTransferIdx = verifiedTxs.findIndex(
-        vtx => vtx.transactionHash === newVerifiedTransfer.transactionHash
-      );
-
-      if(verifiedTransferIdx > -1) {
-        const issues = [...verifiedTxs[verifiedTransferIdx].issues];
-        issues.push(newVerifiedTransfer.issue.id);
-
-        if(!!newVerifiedTransfer.permitted) {
-          verifiedTxs[verifiedTransferIdx] = { ...newVerifiedTransfer, issues };
-        }
-        
-        verifiedTxs[verifiedTransferIdx].issues = issues;
-      } else {
-        verifiedTxs.push({ 
-          ...newVerifiedTransfer, 
-          issues: [newVerifiedTransfer.issue.id] 
-        });
-      }
-    }
-
-    for(let i =0; i < verifiedTxs.length; i++) {
+      verifiedTxs.push(newVerifiedTransfer);
       await this.vaultsBlocker.addSecurityCheck(verifiedTxs[i]);
     }
 
