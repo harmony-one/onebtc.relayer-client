@@ -25,7 +25,7 @@ export const InitSecurity = async (): Promise<IServices> => {
 
   services.issues = new IssueService({
     database: databaseService,
-    dbCollectionPrefix: 'issues',
+    dbCollectionPrefix: 'issues-3',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     contractAbi: oneBtcAbi,
     eventEmitter,
@@ -39,7 +39,7 @@ export const InitSecurity = async (): Promise<IServices> => {
 
   services.redeems = new IssueService({
     database: databaseService,
-    dbCollectionPrefix: 'redeems',
+    dbCollectionPrefix: 'redeems-3',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     contractAbi: oneBtcAbi,
     eventEmitter,
@@ -53,7 +53,7 @@ export const InitSecurity = async (): Promise<IServices> => {
 
   services.onebtcEvents = new LogEvents({
     database: databaseService,
-    dbCollectionPrefix: 'onebtc-events',
+    dbCollectionPrefix: 'onebtc-events-3',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     contractAbi: oneBtcAbi,
     eventEmitter,
@@ -71,7 +71,7 @@ export const InitSecurity = async (): Promise<IServices> => {
   await services.relayer.start();
 
   services.vaultsBlocker = new VaultsBlocker({
-    dbCollectionName: 'security-txs-2',
+    dbCollectionName: 'security-txs-3',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     eventEmitter,
     services,
@@ -80,7 +80,7 @@ export const InitSecurity = async (): Promise<IServices> => {
   await services.vaultsBlocker.start();
 
   services.securityClient = new SecurityClient({
-    dbCollectionName: 'security-blocks-2',
+    dbCollectionName: 'security-blocks-3',
     eventEmitter,
     database: services.database,
     onebtcEvents: services.onebtcEvents,
