@@ -175,6 +175,7 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       notDoublePayment: true,
       redeemScript: '',
       redeemId: '',
+      doublePaymentTxHash: '',
     };
 
     if (tx.outputs?.length !== 3) {
@@ -202,10 +203,14 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
         verifiedTransfer.redeemScript = tx.outputs[2].script;
 
         req = await this.vaultsBlocker.getData({ filter: { redeemScript: tx.outputs[2].script } });
-        const isRedeemAlreadyUsing = !!req.content[0];
+        
+        for (let i=0; i < req.content.length; i++) {
+          const doublePaymentTx = req.content[i];
 
-        if(isRedeemAlreadyUsing) {
-          verifiedTransfer.notDoublePayment = false;
+          if(doublePaymentTx && doublePaymentTx.transactionHash !== tx.hash) {
+            verifiedTransfer.doublePaymentTxHash = doublePaymentTx.transactionHash;
+            verifiedTransfer.notDoublePayment = false;
+          }
         }
       }
     } else {

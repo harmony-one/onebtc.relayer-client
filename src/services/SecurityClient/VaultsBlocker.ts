@@ -36,6 +36,7 @@ export interface ISecurityCheck {
   redeemScript: string;
   redeemId: string;
   issueId: string;
+  doublePaymentTxHash: string;
 };
 
 export class VaultsBlocker extends DataLayerService<ISecurityCheck> {
