@@ -32,6 +32,9 @@ export interface ISecurityCheck {
   issue: IssueRequest,
   tx: any,
   permitted: boolean;
+  notDoublePayment: boolean;
+  script: string;
+  redeem: string;
 };
 
 export class VaultsBlocker extends DataLayerService<ISecurityCheck> {

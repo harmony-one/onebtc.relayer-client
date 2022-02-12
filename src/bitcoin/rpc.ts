@@ -56,11 +56,11 @@ export const getFullBlockByHeight = async (height): Promise<any> => {
     //   p.etaDate
     // )
 
-    console.log(
-      p.totalh,
-      p.doneh,
-      Number(p.progress * 100).toFixed(0),
-    )
+    // console.log(
+    //   p.totalh,
+    //   p.doneh,
+    //   Number(p.progress * 100).toFixed(0),
+    // )
   });
 
   const data = await response.json();

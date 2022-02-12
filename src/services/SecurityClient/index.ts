@@ -98,7 +98,7 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       }));
 
       // this.startBtcHeight = Number(await getHeight()) - 100;
-      this.startBtcHeight = 722500;
+      this.startBtcHeight = 708987;
       // this.startBtcHeight = 720035 // stuck with this
 
       const req = await this.getData({ size: 1, page: 0, sort: { height: -1 } });
@@ -156,6 +156,9 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       output_2_ok: true,
       permitted: false,
       height: this.currentBtcHeight,
+      notDoublePayment: true,
+      script: '',
+      redeem: '',
     };
 
     if (tx.outputs?.length !== 3) {
@@ -170,11 +173,24 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       }
 
       //search redeem by script
-      const req = await this.redeems.getData({ filter: { script: tx.outputs[2].script } });
+      let req = await this.redeems.getData({ filter: { script: tx.outputs[2].script } });
       redeem = req.content[0];
 
       if (!redeem) {
         verifiedTransfer.output_2_ok = false;
+      } else {
+        verifiedTransfer.redeem = redeem.id;
+      }
+
+      if(tx.outputs[2].script) {
+        verifiedTransfer.script = tx.outputs[2].script;
+
+        req = await this.vaultsBlocker.getData({ filter: { script: tx.outputs[2].script } });
+        const isRedeemAlreadyUsing = !!req.content[0];
+
+        if(isRedeemAlreadyUsing) {
+          verifiedTransfer.notDoublePayment = false;
+        }
       }
     } else {
       verifiedTransfer.output_2_ok = false;
@@ -202,6 +218,7 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
     verifiedTransfer.permitted = verifiedTransfer.output_0_ok && 
       verifiedTransfer.output_1_ok && 
       verifiedTransfer.output_2_ok && 
+      verifiedTransfer.notDoublePayment && 
       verifiedTransfer.output_length_ok;
 
     return verifiedTransfer;
