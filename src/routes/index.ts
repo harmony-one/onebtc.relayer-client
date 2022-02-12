@@ -1,4 +1,4 @@
-import { asyncHandler, parseSort } from './helpers';
+import { asyncHandler, parseSort, strToBoolean } from './helpers';
 import { IServices } from '../services/init';
 
 export enum MANAGER_ACTION {
@@ -326,8 +326,8 @@ export const routes = (app, services: IServices) => {
         page,
         sort: { timestamp: -1 },
         filter: {
-          height,
-          hasUnPermittedTxs,
+          height: height && Number(height), 
+          hasUnPermittedTxs: strToBoolean(hasUnPermittedTxs),
           id,
         },
       });
@@ -355,11 +355,11 @@ export const routes = (app, services: IServices) => {
         page,
         sort: { timestamp: -1 },
         filter: {
-          height, 
+          height: height && Number(height), 
           btcAddress, 
-          permitted, 
+          permitted: strToBoolean(permitted), 
           transactionHash, 
-          vault 
+          vault
         },
       });
 

@@ -26,3 +26,12 @@ export const parseSort = (sort: string, defaultSort: {[key: string]: 1 | -1}) =>
 
   return {[field]: dir};
 }
+
+const boolTypes = {
+  'true': true,
+  'True': true,
+  'false': false,
+  'False': false,
+}
+
+export const strToBoolean = (str: string) => boolTypes[str];

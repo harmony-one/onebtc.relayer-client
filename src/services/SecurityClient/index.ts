@@ -91,10 +91,14 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
         btcAddressBase58: getBase58FromHex(issue.btcAddress),
       }));
 
-      this.eventEmitter.on('ADD_IssueRequested', issue => this.issuesData.push(issue));
+      this.eventEmitter.on('ADD_IssueRequested', issue => this.issuesData.push({
+        ...issue,
+        btcAddressBech32: getBech32FromHex(issue.btcAddress),
+        btcAddressBase58: getBase58FromHex(issue.btcAddress),
+      }));
 
       // this.startBtcHeight = Number(await getHeight()) - 100;
-      this.startBtcHeight = 708987;
+      this.startBtcHeight = 722500;
       // this.startBtcHeight = 720035 // stuck with this
 
       const req = await this.getData({ size: 1, page: 0, sort: { height: -1 } });
@@ -158,30 +162,40 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       verifiedTransfer.output_length_ok = false;
     }
 
-    if (!tx.outputs[2].script) {
-      verifiedTransfer.output_2_ok = false;
-    }
+    let redeem;
 
-    //search redeem by script
-    const req = await this.redeems.getData({ filter: { script: tx.outputs[2].script } });
-    const redeem = req.content[0];
+    if(tx.outputs[2]) {
+      if (!tx.outputs[2].script) {
+        verifiedTransfer.output_2_ok = false;
+      }
 
-    if (!redeem) {
+      //search redeem by script
+      const req = await this.redeems.getData({ filter: { script: tx.outputs[2].script } });
+      redeem = req.content[0];
+
+      if (!redeem) {
+        verifiedTransfer.output_2_ok = false;
+      }
+    } else {
       verifiedTransfer.output_2_ok = false;
     }
 
     //check other outputs
-    if (getBech32Unify(tx.outputs[1].address) !== getBech32FromHex(issue.btcAddress)) {
+    if (getBech32Unify(tx.outputs[1]?.address) !== getBech32FromHex(issue.btcAddress)) {
       verifiedTransfer.output_1_ok = false;
     }
 
-    if (getBech32Unify(tx.outputs[0].address) !== getBech32FromHex(redeem.btcAddress)) {
-      verifiedTransfer.output_0_ok = false;
-    }
+    if(redeem) {
+      if (getBech32Unify(tx.outputs[0]?.address) !== getBech32FromHex(redeem.btcAddress)) {
+        verifiedTransfer.output_0_ok = false;
+      }
 
-    const isAmountEqual = new BN(tx.outputs[0].value).eq(new BN(redeem.amountBtc));
+      const isAmountEqual = new BN(tx.outputs[0].value).eq(new BN(redeem.amountBtc));
 
-    if (!isAmountEqual) {
+      if (!isAmountEqual) {
+        verifiedTransfer.output_0_ok = false;
+      }
+    } else {
       verifiedTransfer.output_0_ok = false;
     }
 
