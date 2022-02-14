@@ -39,6 +39,8 @@ export class RelayerClient {
   status = RELAYER_STATUS.STOPPED;
   lastError = '';
 
+  MAX_BATCH_SIZE = 50;
+
   constructor(params: IRelayerClient) {
     this.database = params.database;
     this.dbCollectionName = params.dbCollectionName;
@@ -67,6 +69,8 @@ export class RelayerClient {
         this.web3.eth.accounts.wallet.add(ethMasterAccount);
         this.web3.eth.defaultAccount = ethMasterAccount.address;
         this.ethMasterAccount = ethMasterAccount.address;
+
+        console.log('this.ethMasterAccount', this.ethMasterAccount);
 
         this.relayContract = new this.web3.eth.Contract(
           abi as AbiItem[],
@@ -112,10 +116,37 @@ export class RelayerClient {
   syncBlockHeader = async () => {
     try {
       const res = await this.relayContract.methods.getBestBlock().call();
+
       this.btcLastBlock = Number(res.height);
       this.nodeLastBlock = await getHeight();
 
-      if (this.nodeLastBlock > this.btcLastBlock) {
+      if(this.nodeLastBlock - this.btcLastBlock > 50) {
+        const start = Date.now();
+
+        let blocks = '';
+
+        for(let idx=1; idx <= this.MAX_BATCH_SIZE; idx++) {
+            const block = await getBlockByHeight(this.btcLastBlock + idx);
+            blocks = blocks + block.toHex(true);
+        }
+
+        console.log('Blocks loaded: ', (Date.now() - start) / 1000);
+
+        const resT = await this.relayContract.methods.submitBlockHeaderBatch('0x' + blocks).send({
+          from: this.ethMasterAccount,
+          gas: process.env.HMY_GAS_LIMIT,
+          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(3)),
+        });
+
+        log.info('submitBlockHeaderBatch: ', {
+          status: resT.status, 
+          time: (Date.now() - start) / 1000,
+          start: this.btcLastBlock,
+          end: this.btcLastBlock + this.MAX_BATCH_SIZE
+        });
+
+        this.btcLastBlock = this.btcLastBlock + this.MAX_BATCH_SIZE;        
+      } else if (this.nodeLastBlock > this.btcLastBlock) {
         const block = await getBlockByHeight(this.btcLastBlock + 1);
 
         await this.relayContract.methods.submitBlockHeader('0x' + block.toHex(true)).send({
@@ -124,9 +155,9 @@ export class RelayerClient {
           gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
         });
 
-        this.btcLastBlock = this.btcLastBlock + 1;
+        log.info ('Block synced', { height: this.btcLastBlock });
 
-        // console.log(`${this.btcLastBlock}/${btcHeight}`, 'synced');
+        this.btcLastBlock = this.btcLastBlock + 1;
       } else {
         await sleep(process.env.SYNC_INTERVAL);
       }
