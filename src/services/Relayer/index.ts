@@ -120,7 +120,7 @@ export class RelayerClient {
       this.btcLastBlock = Number(res.height);
       this.nodeLastBlock = await getHeight();
 
-      if(this.nodeLastBlock - this.btcLastBlock > 50) {
+      if(this.nodeLastBlock - this.btcLastBlock > this.MAX_BATCH_SIZE) {
         const start = Date.now();
 
         let blocks = '';
@@ -135,7 +135,7 @@ export class RelayerClient {
         const resT = await this.relayContract.methods.submitBlockHeaderBatch('0x' + blocks).send({
           from: this.ethMasterAccount,
           gas: process.env.HMY_GAS_LIMIT,
-          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(3)),
+          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(4)),
         });
 
         log.info('submitBlockHeaderBatch: ', {
@@ -152,7 +152,7 @@ export class RelayerClient {
         await this.relayContract.methods.submitBlockHeader('0x' + block.toHex(true)).send({
           from: this.ethMasterAccount,
           gas: process.env.HMY_GAS_LIMIT,
-          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(1)),
+          gasPrice: new BN(await this.web3.eth.getGasPrice()).mul(new BN(2)),
         });
 
         log.info ('Block synced', { height: this.btcLastBlock });
