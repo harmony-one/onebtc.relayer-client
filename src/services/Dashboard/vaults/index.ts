@@ -42,8 +42,14 @@ export class VaultsService extends DataLayerService<IVaultRegistry> {
     try {
       const vaultId = data.returnValues.vaultId;
 
-      // TODO: if next string fail - vault will lost
-      const vaultInfo = await this.contract.methods.vaults(vaultId).call();
+      let vaultInfo;
+      
+      try {
+        vaultInfo = await this.contract.methods.vaults(vaultId).call();
+      } catch(e) {
+        log.error(`Error get vault`, { error: e, data });
+      }
+
       const vault = { ...vaultInfo, id: vaultId };
 
       await this.updateOrCreateData(vault);

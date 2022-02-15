@@ -69,16 +69,21 @@ export class IssueService extends DataLayerService<IssueRequest> {
       const { requester, btcAddress, amount } = data.returnValues;
       const id = data.returnValues[this.idEventKey];
 
-      // TODO: if next string fail - issue will lost
-      const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
+      let issueInfo;
+
+      try {
+        issueInfo = await this.contract.methods[this.methodName](requester, id).call();
+      } catch (e) {
+        log.error(`Error ${this.methodName}`, { error: e, data });
+      }
 
       const emb = bitcoin.payments.embed({ data: [new BN(id).toBuffer()] });
       const script = emb.output.toString('hex');
 
       let issue;
 
-      if(issueInfo.status === '0') {
-        issue = { ...issueInfo, requester, id, script, btcAddress, amount };
+      if(!issueInfo || issueInfo.status === '0') {
+        issue = { ...issueInfo, requester, id, script, btcAddress, amount, status: '0' };
       } else {
         issue = { ...issueInfo, requester, id, script };
       }
