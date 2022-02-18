@@ -75,7 +75,7 @@ export class LogEvents {
       if (req.content.length) {
         this.lastBlock = req.content[0].blockNumber;
         // this.lastBlock = Number(this.lastBlock) - 250000; // reload last 5 days on restart
-        this.lastBlock = Number(this.lastBlock) - 50000; // reload last 1 days on restart
+        this.lastBlock = Number(this.lastBlock) - 150000; // reload last 3 days on restart
       }
 
       // this.lastBlock = 22740000; // 02.09.2022 - launch date
