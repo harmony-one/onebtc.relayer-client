@@ -28,10 +28,22 @@ export interface IVaultClient extends ILogEventsService {
   services: IServices;
 }
 
+export interface IVault {
+  btcPublicKeyX: string;
+  btcPublicKeyY: string;
+  collateral: string;
+  issued: string;
+  toBeIssued: string;
+  toBeRedeemed: string;
+  replaceCollateral: string;
+  toBeReplaced: string;
+}
+
 enum RELAYER_STATUS {
   STOPPED = 'STOPPED',
   LAUNCHED = 'LAUNCHED',
   PAUSED = 'PAUSED',
+  ERROR = 'ERROR',
 }
 
 export class VaultClient extends DataLayerService<IOperationInitParams> {
@@ -47,6 +59,8 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   walletBTC: WalletBTC;
 
   status = RELAYER_STATUS.STOPPED;
+
+  errorText = '';
 
   constructor(params: IVaultClient) {
     super(params);
@@ -93,10 +107,17 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
       await this.walletBTC.init(btcPrivateKey);
 
+      this.status = RELAYER_STATUS.LAUNCHED;
+
+      // additional check for BTC PK
+      const vault = await this.hmyContractManager.getVaultInfo();
+
+      if(!!vault && !this.checkBTCKey(vault)) {
+        throw new Error('BTC private key does not match registered public address');
+      }
+
       this.eventEmitter.on(`ADD_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
       this.eventEmitter.on(`UPDATE_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
-
-      this.status = RELAYER_STATUS.LAUNCHED;
 
       setInterval(this.pingDashboard, 30000);
 
@@ -106,6 +127,8 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     } catch (e) {
       log.error(`Start Vault Client - failed`, { error: e });
       // throw new Error(`Start Vault Client: ${e.message}`);
+      this.errorText  = e && e.message;
+      this.status = RELAYER_STATUS.ERROR;
     }
   }
 
@@ -235,7 +258,30 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     }
   };
 
+  checkBTCKey = (vault: IVault)  => {
+    if(!vault) {
+      return false;
+    }
+
+    const vaultEcPair = bitcoin.ECPair.fromPrivateKey(
+      Buffer.from(this.walletBTC.btcPrivateKey, 'hex'),
+      { compressed: false }
+    );
+  
+    const pubX = bn(vaultEcPair.publicKey.slice(1, 33));
+    const pubY = bn(vaultEcPair.publicKey.slice(33, 65));
+
+    return String(pubX) === vault.btcPublicKeyX && String(pubY) === vault.btcPublicKeyY;
+  }
+
   info = async () => {
+    if(this.status !== RELAYER_STATUS.LAUNCHED) {
+      return {
+        status: this.status,
+        error: this.errorText,
+      };
+    }
+
     const operations = await this.getInfo();
 
     const eventsInfo = await this.services.onebtcEvents.getInfo();
@@ -243,17 +289,18 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
     const vault = await this.hmyContractManager.getVaultInfo();
 
-    const balances = await this.walletBTC.getBalances();
+    // const balances = await this.walletBTC.getBalances();
 
     return {
       synchronized,
       syncProgress: eventsInfo.progress,
       registered: !!vault,
       status: this.status,
+      error: this.errorText,
       vaultAddress: this.hmyContractManager.masterAddress,
       vaultInfo: vault,
       contract: this.contractAddress,
-      balances,
+      // balances,
       operations,
       relayer: {
         isRelayerSynced: this.services.relayerClient.isSynced(),
@@ -287,7 +334,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
       const synchronized = parseInt(eventsInfo.progress) === 1;
 
       const info = {
-        version: "0.0.8",
+        version: "0.0.12",
         synchronized,
         syncProgress: eventsInfo.progress,
         status: this.status,
