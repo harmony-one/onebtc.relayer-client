@@ -7,6 +7,7 @@ const log = logger.module('Issues:main');
 
 const bitcoin = require('bitcoinjs-lib');
 import BN from 'bn.js';
+import axios from 'axios';
 
 export interface IIssueService extends ILogEventsService {
   eventEmitter: EventEmitter;
@@ -56,6 +57,10 @@ export class IssueService extends DataLayerService<IssueRequest> {
       data.content.forEach(item => this.observableData.set(item.id, item));
 
       setTimeout(this.syncData, 100);
+
+      if(['vault', 'security'].includes(process.env.MODE)) {
+        setTimeout(this.checkIssues, 100);
+      }
 
       log.info(`Start ${this.eventName} Service - ok`);
     } catch (e) {
@@ -160,4 +165,41 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
     setTimeout(this.syncData, this.waitInterval);
   };
+
+  checkIssues = async () => {
+    try {
+      const dataUrl = `${process.env.DASHBOARD_URL}/${this.dbCollectionPrefix}/data?size=10`;
+
+      const res = await axios.get(dataUrl);
+
+      // console.log(`DATA ${this.dbCollectionPrefix}: `, res.data.content);
+
+      const issues = res.data.content;
+
+      for (let i = 0; i < issues.length; i++) {
+        const issue = issues[i];
+
+        const dbIssue = await this.find(issue.id);
+
+        if(!dbIssue) {
+          const event: any = {
+            returnValues: {
+              requester: issue.requester,
+              btcAddress: issue.btcAddress,
+              amount: issue.amount,
+              vaultId: issue.vault,
+              fee: issue.fee,
+              [this.idEventKey]: issue.id,
+            }
+          };
+
+          await this.addIssue(event);
+        }
+      }  
+    } catch (e) {
+      log.error(`checkIssues ${this.dbCollectionPrefix}`, { error: e });
+    }
+
+    setTimeout(this.checkIssues, 120 * 1000);
+  }
 }
