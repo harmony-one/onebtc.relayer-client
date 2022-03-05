@@ -191,14 +191,29 @@ export class WalletBTC {
       value: 0,
     });
 
-    freeOutputs.forEach((output, idx) => {
-      const vaultEcPair = derivate(this.btcPrivateKey, output.id);
+    let idx = 0
 
-      psbt.signInput(idx, vaultEcPair);
-      psbt.validateSignaturesOfInput(idx);
-    });
+    try {
+      for (idx = 0; idx < freeOutputs.length; idx++) {
+        const output = freeOutputs[idx];
 
-    psbt.finalizeAllInputs();
+        const vaultEcPair = derivate(this.btcPrivateKey, output.id);
+
+        psbt.signInput(idx, vaultEcPair);
+        psbt.validateSignaturesOfInput(idx);
+      }
+
+      psbt.finalizeAllInputs();
+    } catch(e) {
+      log.error('Error sign input', { 
+        error: e,
+        idx,
+        freeOutput: freeOutputs[idx],
+        freeOutputs
+      });
+
+      throw new Error("Can not sign for this input with the key");
+    }
 
     const transactionHex = psbt.extractTransaction().toHex();
 
