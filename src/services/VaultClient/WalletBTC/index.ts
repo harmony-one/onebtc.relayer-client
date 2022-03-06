@@ -224,6 +224,14 @@ export class WalletBTC {
       throw new Error("Can not sign for this input with the key");
     }
 
+    log.info('Tx before send', { tx: {
+      txOutputs: psbt.txOutputs(),
+      txInputs: psbt.txInputs(),
+      fee,
+      leftAmount,
+      amount: params.amount,
+    }});
+
     const transactionHex = psbt.extractTransaction().toHex();
 
     const res = await axios.post(`${process.env.BTC_NODE_URL}/broadcast`, {
