@@ -225,8 +225,8 @@ export class WalletBTC {
     }
 
     log.info('Tx before send', { tx: {
-      txOutputs: psbt.txOutputs(),
-      txInputs: psbt.txInputs(),
+      txOutputs: psbt.txOutputs,
+      txInputs: psbt.txInputs,
       fee,
       leftAmount,
       amount: params.amount,
