@@ -68,6 +68,10 @@ export class WalletBTC {
     return balances;
   };
 
+  ignoreIssuesList = [
+    '403457160729548939033534475047079399793301172341154297055586226316249410827'
+  ];
+
   getFreeOutputs = async (amount: number, getMax = false): Promise<IFreeOutput[]> => {
     const issues = await this.services.issues.getData({
       page: 0,
@@ -84,6 +88,11 @@ export class WalletBTC {
 
     while ((getMax || totalAmount < amount) && i < issues.content.length) {
       const issue: IssueRequest = issues.content[i];
+
+      if (this.ignoreIssuesList.includes(issue.id)) {
+        i++;
+        continue;
+      }
 
       const bech32Address = bitcoin.address.toBech32(
         Buffer.from(issue.btcAddress.slice(2), 'hex'),
