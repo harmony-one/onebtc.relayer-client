@@ -153,27 +153,25 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     });
 
     res.content.forEach(params => {
-      if(params.status !== STATUS.WAITING) {
-        log.info('Restore operation', {
-          id: params.id,
-          type: params.type,
-          btcAddress: params.btcAddress,
-          vault: params.vault,
-          requester: params.requester,
-          amount: params.amount,
-        });
+      log.info('Restore operation', {
+        id: params.id,
+        type: params.type,
+        btcAddress: params.btcAddress,
+        vault: params.vault,
+        requester: params.requester,
+        amount: params.amount,
+      });
 
-        const operation = new Operation();
+      // const operation = new Operation();
 
-        operation.asyncConstructor(
-          params,
-          this.saveOperationToDB,
-          this.walletBTC,
-          this.hmyContractManager
-        );
+      // operation.asyncConstructor(
+      //   params,
+      //   this.saveOperationToDB,
+      //   this.walletBTC,
+      //   this.hmyContractManager
+      // );
 
-        this.operations.push(operation);
-      }
+      // this.operations.push(operation);
     });
   };
 
