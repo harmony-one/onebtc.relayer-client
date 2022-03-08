@@ -3,6 +3,7 @@ import { IServices } from '../services/init';
 
 export enum MANAGER_ACTION {
   RESET = 'reset',
+  DELETE = 'delete',
 }
 
 export const routes = (app, services: IServices) => {
@@ -400,6 +401,10 @@ export const routes = (app, services: IServices) => {
         case MANAGER_ACTION.RESET:
           result = await services.vaultClient.resetOperation(otherParams.operationId);
           break;
+
+        case MANAGER_ACTION.DELETE:
+          result = await services.vaultClient.deleteOperation(otherParams.operationId);
+          break;  
       }
 
       return res.json({ result, status: true });

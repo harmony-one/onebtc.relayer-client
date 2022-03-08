@@ -175,6 +175,30 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     });
   };
 
+
+  deleteOperation = async (id: string) => {
+    const operation = this.operations.find(o => o.id === id);
+
+    if (operation && operation.status === STATUS.ERROR) {
+      const newOperationObj: any = operation.toObject({ payload: true });
+
+      newOperationObj.status = STATUS.WAITING;
+      newOperationObj.wasRestarted = newOperationObj.wasRestarted
+        ? Number(newOperationObj.wasRestarted) + 1
+        : 1;
+
+      newOperationObj.actions = newOperationObj.actions.map(a => ({
+        ...a,
+        status: STATUS.WAITING,
+        error: ''
+      }));
+
+      this.operations = this.operations.filter(o => o.id !== id);
+  
+      return await this.updateOrCreateData(newOperationObj);
+    }
+  }
+
   resetOperation = async (id: string) => {
     const operation = this.operations.find(o => o.id === id);
 
