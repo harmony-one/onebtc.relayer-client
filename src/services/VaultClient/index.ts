@@ -153,36 +153,38 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     });
 
     res.content.forEach(params => {
-      log.info('Restore operation', {
-        id: params.id,
-        type: params.type,
-        btcAddress: params.btcAddress,
-        vault: params.vault,
-        requester: params.requester,
-        amount: params.amount,
-      });
+      if(params.status !== STATUS.WAITING) {
+        log.info('Restore operation', {
+          id: params.id,
+          type: params.type,
+          btcAddress: params.btcAddress,
+          vault: params.vault,
+          requester: params.requester,
+          amount: params.amount,
+        });
 
-      const operation = new Operation();
+        const operation = new Operation();
 
-      operation.asyncConstructor(
-        params,
-        this.saveOperationToDB,
-        this.walletBTC,
-        this.hmyContractManager
-      );
+        operation.asyncConstructor(
+          params,
+          this.saveOperationToDB,
+          this.walletBTC,
+          this.hmyContractManager
+        );
 
-      this.operations.push(operation);
+        this.operations.push(operation);
+      }
     });
   };
 
 
-  deleteOperation = async (id: string) => {
+  cancelOperation = async (id: string) => {
     const operation = this.operations.find(o => o.id === id);
 
-    if (operation && operation.status === STATUS.ERROR) {
+    if (operation) {
       const newOperationObj: any = operation.toObject({ payload: true });
 
-      newOperationObj.status = STATUS.WAITING;
+      newOperationObj.status = STATUS.CANCELED;
       newOperationObj.wasRestarted = newOperationObj.wasRestarted
         ? Number(newOperationObj.wasRestarted) + 1
         : 1;
