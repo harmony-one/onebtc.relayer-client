@@ -171,16 +171,16 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
         amount: params.amount,
       });
 
-      // const operation = new Operation();
+      const operation = new Operation();
 
-      // operation.asyncConstructor(
-      //   params,
-      //   this.saveOperationToDB,
-      //   this.walletBTC,
-      //   this.hmyContractManager
-      // );
+      operation.asyncConstructor(
+        params,
+        this.saveOperationToDB,
+        this.walletBTC,
+        this.hmyContractManager
+      );
 
-      // this.operations.push(operation);
+      this.operations.push(operation);
     });
   };
 
