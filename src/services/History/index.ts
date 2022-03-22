@@ -137,7 +137,7 @@ export class HistoryService extends DataLayerService<any> {
 
       await this.database.update(
         collection,
-        { date },
+        { date: '2022-03-22T00:00:00Z' },
         { vaults: vaults.length, activeVaults: activeVaults.length, totalCollateral, date }
       );
     } catch (e) {
