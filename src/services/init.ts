@@ -32,6 +32,11 @@ export const InitServices = async (): Promise<IServices> => {
 
   const services: IServices = { database: databaseService };
 
+  await databaseService.copyCollectionByUniqueKey(
+    'redeems_data', 'redeems_1_data', 'id'
+  );
+  await databaseService.createIndexWithUniqueKey('redeems_1_data', 'id');
+
   services.relayerClient = new RelayerClient({
     database: databaseService,
     dbCollectionName: 'relay-headers',
@@ -88,7 +93,7 @@ export const InitServices = async (): Promise<IServices> => {
 
   services.redeems = new IssueService({
     database: databaseService,
-    dbCollectionPrefix: 'redeems',
+    dbCollectionPrefix: 'redeems_1',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     contractAbi: oneBtcAbi,
     eventEmitter,
