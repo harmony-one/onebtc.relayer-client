@@ -32,10 +32,20 @@ export const InitServices = async (): Promise<IServices> => {
 
   const services: IServices = { database: databaseService };
 
+  // await databaseService.copyCollectionByUniqueKey(
+  //   'redeems_data', 'redeems_1_data', 'id'
+  // );
+  // await databaseService.createIndexWithUniqueKey('redeems_1_data', 'id');
+
   await databaseService.copyCollectionByUniqueKey(
-    'redeems_data', 'redeems_1_data', 'id'
+    'issues_data', 'issues_1_data', 'id'
   );
-  await databaseService.createIndexWithUniqueKey('redeems_1_data', 'id');
+  await databaseService.createIndexWithUniqueKey('issues_1_data', 'id');
+
+  await databaseService.copyCollectionByUniqueKey(
+    'vaults_data', 'vaults_1_data', 'id'
+  );
+  await databaseService.createIndexWithUniqueKey('vaults_1_data', 'id');
 
   services.relayerClient = new RelayerClient({
     database: databaseService,
@@ -69,7 +79,7 @@ export const InitServices = async (): Promise<IServices> => {
 
   services.vaults = new VaultsService({
     database: databaseService,
-    dbCollectionPrefix: 'vaults',
+    dbCollectionPrefix: 'vaults_1',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     contractAbi: oneBtcAbi,
     eventEmitter,
@@ -79,7 +89,7 @@ export const InitServices = async (): Promise<IServices> => {
 
   services.issues = new IssueService({
     database: databaseService,
-    dbCollectionPrefix: 'issues',
+    dbCollectionPrefix: 'issues_1',
     contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
     contractAbi: oneBtcAbi,
     eventEmitter,
