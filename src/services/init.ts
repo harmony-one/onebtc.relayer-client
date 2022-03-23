@@ -37,15 +37,15 @@ export const InitServices = async (): Promise<IServices> => {
   // );
   // await databaseService.createIndexWithUniqueKey('redeems_1_data', 'id');
 
-  await databaseService.copyCollectionByUniqueKey(
-    'issues_data', 'issues_1_data', 'id'
-  );
-  await databaseService.createIndexWithUniqueKey('issues_1_data', 'id');
+  // await databaseService.copyCollectionByUniqueKey(
+  //   'issues_data', 'issues_1_data', 'id'
+  // );
+  // await databaseService.createIndexWithUniqueKey('issues_1_data', 'id');
 
-  await databaseService.copyCollectionByUniqueKey(
-    'vaults_data', 'vaults_1_data', 'id'
-  );
-  await databaseService.createIndexWithUniqueKey('vaults_1_data', 'id');
+  // await databaseService.copyCollectionByUniqueKey(
+  //   'vaults_data', 'vaults_1_data', 'id'
+  // );
+  // await databaseService.createIndexWithUniqueKey('vaults_1_data', 'id');
 
   services.relayerClient = new RelayerClient({
     database: databaseService,
