@@ -160,12 +160,13 @@ export class DBService {
         );
 
         for(let i = 0; i< data.length; i++) {
-          const record = data[i];
+          const record = {...data[i]};
+          delete record._id;
 
           await this.update(
             newCollection,
             { [indexKey]: record[indexKey] },
-            {...record}
+            record
           );
         }
 
