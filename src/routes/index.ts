@@ -430,4 +430,15 @@ export const routes = (app, services: IServices) => {
       res.send(JSON.stringify(data, null, 4));
     })
   );
+
+  app.get(
+    '/db/status',
+    asyncHandler(async (req, res) => {
+      const stats = await services.database.db.stats();
+      const status = await services.database.db.admin().serverStatus();
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify({ stats, status }, null, 4));
+    })
+  );
 };

@@ -150,7 +150,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   };
 
   saveOperationToDB = async (operation: Operation) => {
-    return await this.updateOrCreateData(operation.toObject({ payload: true }));
+    await this.updateOrCreateData(operation.toObject({ payload: true }));
   };
 
   loadOperationsFromDB = async () => {
