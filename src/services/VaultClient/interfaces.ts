@@ -1,6 +1,7 @@
 export enum OPERATION_TYPE {
   ISSUE = 'ISSUE',
   REDEEM = 'REDEEM',
+  RETURN_WRONG_PAY = 'RETURN_WRONG_PAY',
 }
 
 export enum STATUS {
@@ -12,9 +13,12 @@ export enum STATUS {
 }
 
 export enum ACTION_TYPE {
-  waitingForPayment = 'waitingForPayment',
   waitingConfirmations = 'waitingConfirmations',
   transferBTC = 'transferBTC',
   executeRedeem = 'executeRedeem',
   executeIssue = 'executeIssue',
+
+  // return wrong payment
+  validateWrongPayment = 'validateWrongPayment',
+  returnBTC = 'returnBTC',
 }

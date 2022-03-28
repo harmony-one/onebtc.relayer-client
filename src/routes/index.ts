@@ -1,5 +1,6 @@
 import { asyncHandler, parseSort, strToBoolean } from './helpers';
 import { IServices } from '../services/init';
+import { OPERATION_TYPE } from '../services/VaultClient/interfaces';
 
 export enum MANAGER_ACTION {
   RESET = 'reset',
@@ -431,14 +432,73 @@ export const routes = (app, services: IServices) => {
     })
   );
 
+  // app.get(
+  //   '/db/status',
+  //   asyncHandler(async (req, res) => {
+  //     const stats = await services.database.db.stats();
+  //     const status = await services.database.db.admin().serverStatus();
+
+  //     res.header('Content-Type', 'application/json');
+  //     res.send(JSON.stringify({ stats, status }, null, 4));
+  //   })
+  // );
+
   app.get(
-    '/db/status',
+    '/check-txs/status',
     asyncHandler(async (req, res) => {
-      const stats = await services.database.db.stats();
-      const status = await services.database.db.admin().serverStatus();
+      const data = await services.wrongPayment.getCheckStatus();
 
       res.header('Content-Type', 'application/json');
-      res.send(JSON.stringify({ stats, status }, null, 4));
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/check-txs/:vault/latest',
+    asyncHandler(async (req, res) => {
+      const data = await services.wrongPayment.getLastCheck(req.params.vault);
+
+      data.content.sort((a, b) => a.type > b.type ?  -1 : 1);
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/check-txs/:vault',
+    asyncHandler(async (req, res) => {
+      const data = await services.wrongPayment.checkIssuesToWrongPayment(req.params.vault);
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.post(
+    '/check-txs/return',
+    asyncHandler(async (req, res) => {
+      const { tx, btcAddress } = req.body;
+
+      const wrongPayTx = await services.wrongPayment.find(tx);
+
+      if(!wrongPayTx) {
+        throw new Error('Transaction not found');
+      }
+
+      const info = await services.vaultClient.info();
+
+      const operation = await services.vaultClient.createOperation({
+        id: tx,
+        type: OPERATION_TYPE.RETURN_WRONG_PAY,
+        btcAddress,
+        amount: wrongPayTx.amount,
+        vault: info.vaultAddress,
+        requester: info.vaultAddress,
+      });
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(operation, null, 4));
     })
   );
 };
