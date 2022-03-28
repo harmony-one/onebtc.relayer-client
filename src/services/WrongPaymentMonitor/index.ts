@@ -9,6 +9,8 @@ import { LogEvents } from '../Dashboard/events';
 import { DataLayerService, IssueRequest } from '../common';
 import { getBase58FromHex,  getBech32FromHex, getBech32Unify } from '../../bitcoin/helpers';
 import { isAmountEqual } from './helpers';
+import { IServices } from "../init_vault";
+const bitcoin = require('bitcoinjs-lib');
 const log = logger.module('wrongPaymant:index');
 
 import BN from 'bn.js';
@@ -17,8 +19,7 @@ export interface ISecurityClient {
   database: DBService;
   eventEmitter: EventEmitter;
   dbCollectionName: string;
-  issues: IssueService;
-  redeems: IssueService;
+  services: IServices;
 }
 
 export enum STATUS {
@@ -61,8 +62,7 @@ enum TX_TYPE {
 export class WrongPaymentMonitor extends DataLayerService<IWrongPayment> {
   database: DBService;
 
-  issues: IssueService;
-  redeems: IssueService;
+  services: IServices;
   onebtcEvents: LogEvents;
 
   status = STATUS.STOPPED;
@@ -83,8 +83,7 @@ export class WrongPaymentMonitor extends DataLayerService<IWrongPayment> {
     });
 
     this.database = params.database;
-    this.issues = params.issues;
-    this.redeems = params.redeems;
+    this.services = params.services;
 
     this.eventEmitter = params.eventEmitter;
   }
@@ -153,7 +152,7 @@ export class WrongPaymentMonitor extends DataLayerService<IWrongPayment> {
       }
 
       //search redeem by script
-      let req = await this.redeems.getData({ filter: { script: tx.outputs[2].script } });
+      let req = await this.services.redeems.getData({ filter: { script: tx.outputs[2].script } });
       redeem = req.content[0];
 
       // if(!redeem) {
@@ -224,7 +223,7 @@ export class WrongPaymentMonitor extends DataLayerService<IWrongPayment> {
       this.isLoading = true;
       this.lastError = '';
 
-      const issuesDataRes = await this.issues.getData({ size: 10000, filter: { vault } });
+      const issuesDataRes = await this.services.issues.getData({ size: 10000, filter: { vault } });
       const issuesData = issuesDataRes.content.map(issue => ({
         ...issue,
         btcAddressBech32: getBech32FromHex(issue.btcAddress),
@@ -303,6 +302,16 @@ export class WrongPaymentMonitor extends DataLayerService<IWrongPayment> {
             amount = output.value;
           }
 
+          let alreadyReturned = false;
+
+          if(type === TX_TYPE.WRONG_PAYMENT) {
+            const operation = await this.services.vaultClient.find(tx.hash);
+            if(operation && operation.amount === amount){
+              // type = TX_TYPE.WRONG_PAYMENT_RETURN;
+              alreadyReturned = true;
+            }
+          }
+
           this.updateOrCreateData({ 
             id: tx.hash,
             type,
@@ -312,7 +321,7 @@ export class WrongPaymentMonitor extends DataLayerService<IWrongPayment> {
             issue: issue.id,
             vault: vault,
             operationId: null,  
-            alreadyReturned: false,
+            alreadyReturned,
             amount,
             btcAddress: issue.btcAddressBech32, 
             timestamp: tx.time,
@@ -332,7 +341,56 @@ export class WrongPaymentMonitor extends DataLayerService<IWrongPayment> {
     }
   }
 
-  validateWrongPayment = async (tx, vallet) => {
+  validateWrongPayment = async (id, vault) => {
+    const checkedPayment = await this.find(id);
+
+    if (!checkedPayment) {
+      throw new Error('Payment not found');
+    }
+
+    if(checkedPayment.type !== TX_TYPE.WRONG_PAYMENT) {
+      throw new Error(`Payment type ${checkedPayment.type} icorrect for refund`);      
+    }
+
+    if(checkedPayment.vault !== vault) {
+      throw new Error(`Inctorrect vault`);
+    }
+
+    const issuesDataRes = await this.services.issues.getData({ size: 10000, filter: { vault } });
+    const issuesData = issuesDataRes.content.map(issue => ({
+      ...issue,
+      btcAddressBech32: getBech32FromHex(issue.btcAddress),
+      btcAddressBase58: getBase58FromHex(issue.btcAddress),
+    }));
+
+    let txNotFound = true;
+
+    const embed = bitcoin.payments.embed({ data: [new BN(id).toBuffer()] });
+    const scriptById = embed.output;
+
+    for(let i=0; i < issuesData.length; i++){
+      const issue = issuesData[i];
+
+      // log.info('getTxsByAddress: ', issue.btcAddressBech32);
+      let txs = await getTxsByAddress(issue.btcAddressBech32);
+
+      for(let j=0; j < txs.length;  j++) {
+        const tx = txs[j];
+
+        if(tx.hash === id) {
+          txNotFound = false;
+        }
+
+        if (tx.outputs?.length === 3 && tx.outputs[2].script === scriptById) {
+          throw new Error(`Payment already refunded`);
+        }
+      }
+    }
+
+    if(txNotFound) {
+      throw new Error(`Transaction not found in Vault`);
+    }
+
     return { status: true };
   }
 

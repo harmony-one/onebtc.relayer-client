@@ -85,8 +85,7 @@ export const InitVault = async (): Promise<IServices> => {
     dbCollectionName: 'check-txs',
     eventEmitter,
     database: services.database,
-    issues: services.issues,
-    redeems: services.redeems,
+    services,
   }) 
 
   await services.wrongPayment.start();
