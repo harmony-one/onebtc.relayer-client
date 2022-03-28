@@ -9,6 +9,7 @@ import { HistoryService } from './History';
 import {OracleClient} from "./OracleClient";
 import {VaultsBlocker} from "./SecurityClient/VaultsBlocker";
 import {SecurityClient} from "./SecurityClient";
+import { WrongPaymentMonitor } from './WrongPaymentMonitor';
 
 export interface IServices {
   relayerClient?: RelayerClient;
@@ -23,6 +24,7 @@ export interface IServices {
   history?: HistoryService;
   vaultsBlocker?: VaultsBlocker;
   securityClient?: SecurityClient;
+  wrongPayment?: WrongPaymentMonitor;
 }
 
 export const InitServices = async (): Promise<IServices> => {

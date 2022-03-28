@@ -5,6 +5,7 @@ import { LogEvents, IssueService } from './Dashboard';
 import { VaultClient } from './VaultClient';
 import { RelayerClient } from './Relayer';
 import {VaultSettingService} from "./VaultClient/VaultSettings/VaultSettings";
+import { WrongPaymentMonitor } from './WrongPaymentMonitor';
 
 export interface IServices {
   database?: DBService;
@@ -14,6 +15,7 @@ export interface IServices {
   vaultDbSettings?: VaultSettingService;
   vaultClient?: VaultClient;
   relayerClient?: RelayerClient;
+  wrongPayment?: WrongPaymentMonitor;
 }
 
 export const InitVault = async (): Promise<IServices> => {
@@ -40,17 +42,6 @@ export const InitVault = async (): Promise<IServices> => {
   });
 
   await services.relayerClient.start();
-
-  services.vaultClient = new VaultClient({
-    database: databaseService,
-    dbCollectionPrefix: 'vault-client',
-    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
-    contractAbi: oneBtcAbi,
-    eventEmitter,
-    services,
-  });
-
-  await services.vaultClient.start();
 
   services.issues = new IssueService({
     database: databaseService,
@@ -89,6 +80,27 @@ export const InitVault = async (): Promise<IServices> => {
   });
 
   await services.onebtcEvents.start();
+
+  services.wrongPayment = new WrongPaymentMonitor({
+    dbCollectionName: 'check-txs',
+    eventEmitter,
+    database: services.database,
+    issues: services.issues,
+    redeems: services.redeems,
+  }) 
+
+  await services.wrongPayment.start();
+
+  services.vaultClient = new VaultClient({
+    database: databaseService,
+    dbCollectionPrefix: 'vault-client',
+    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
+    contractAbi: oneBtcAbi,
+    eventEmitter,
+    services,
+  });
+
+  await services.vaultClient.start();
 
   return services;
 };
