@@ -49,35 +49,59 @@ export class WalletBTC {
   };
 
   waitRelayerSynchronization = async () => {
-    while(!this.services.relayerClient.isSynced()){
+    while (!this.services.relayerClient.isSynced()) {
       await sleep(2000);
-    }    
-  }
+    }
+  };
 
   getAmountFromTx = (txObj: any, address: string) => {
     const output = txObj.outputs.find(out => out.address === address);
     return output ? output.value : 0;
   };
 
-  getBalances = async () => {
+  getBalances = async (vaultId: string) => {
     const balances = {};
 
-    const outs = await this.getFreeOutputs(0, true);
+    const outs = await this.getFreeOutputs(0, true, vaultId);
     outs.forEach(o => (balances[o.bech32Address] = (balances[o.bech32Address] || 0) + o.value));
 
     return balances;
   };
 
+  getTotalBalance = async (vaultId: string) => {
+    const balances = {};
+
+    let totalAmount = 0;
+
+    const outs = await this.getFreeOutputs(0, true, vaultId);
+    outs.forEach(o => {
+      balances[o.bech32Address] = (balances[o.bech32Address] || 0) + o.value;
+      totalAmount += Number(o.value);
+    });
+
+    return totalAmount;
+  };
+
   ignoreIssuesList = [
-    '403457160729548939033534475047079399793301172341154297055586226316249410827'
+    '403457160729548939033534475047079399793301172341154297055586226316249410827',
   ];
 
-  getFreeOutputs = async (amount: number, getMax = false): Promise<IFreeOutput[]> => {
+  getOutputsByAmount = async (amount: number, vaultId: string) => {
+    const outs = await this.getFreeOutputs(amount, false, vaultId);
+
+    return outs;
+  };
+
+  getFreeOutputs = async (
+    amount: number,
+    getMax = false,
+    vaultId = this.vaultId
+  ): Promise<IFreeOutput[]> => {
     const issues = await this.services.issues.getData({
       page: 0,
       size: 100000,
       filter: {
-        vault: this.vaultId,
+        vault: vaultId,
         // status: '2',
       },
     });
@@ -104,10 +128,18 @@ export class WalletBTC {
 
       outputs.forEach(out => {
         if (getMax || totalAmount < amount) {
+          console.log(out.value);
+
           totalAmount += Number(out.value);
           freeOutputs.push({ ...out, id: issue.id, bech32Address });
         }
       });
+
+      // console.log(
+      //   `Loaded: ${i} / ${issues.content.length}`,
+      //   (totalAmount / 1e8).toFixed(2),
+      //   Number(amount / 1e8).toFixed(2)
+      // );
 
       i++;
     }
@@ -206,7 +238,7 @@ export class WalletBTC {
       value: 0,
     });
 
-    let idx = 0
+    let idx = 0;
 
     try {
       for (idx = 0; idx < freeOutputs.length; idx++) {
@@ -219,24 +251,26 @@ export class WalletBTC {
       }
 
       psbt.finalizeAllInputs();
-    } catch(e) {
-      log.error('Error sign input', { 
+    } catch (e) {
+      log.error('Error sign input', {
         error: e,
         idx,
         freeOutput: freeOutputs[idx],
-        freeOutputs
+        freeOutputs,
       });
 
-      throw new Error("Can not sign for this input with the key");
+      throw new Error('Can not sign for this input with the key');
     }
 
-    log.info('Tx before send', { tx: {
-      txOutputs: psbt.txOutputs,
-      txInputs: psbt.txInputs,
-      fee,
-      leftAmount,
-      amount: params.amount,
-    }});
+    log.info('Tx before send', {
+      tx: {
+        txOutputs: psbt.txOutputs,
+        txInputs: psbt.txInputs,
+        fee,
+        leftAmount,
+        amount: params.amount,
+      },
+    });
 
     const transactionHex = psbt.extractTransaction().toHex();
 

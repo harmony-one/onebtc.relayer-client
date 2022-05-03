@@ -37,11 +37,12 @@ export class Operation {
 
   syncOperationCallback: TSyncOperationCallback;
 
-  asyncConstructor = (
+  asyncConstructor = async (
     params: IOperationInitParams,
     callback: TSyncOperationCallback,
     wallet: WalletBTC,
-    hmyContractManager: HmyContractManager
+    hmyContractManager: HmyContractManager,
+    validateBeforeStart: (id: string) => Promise<any>
   ) => {
     this.id = params.id;
     this.amount = params.amount;
@@ -73,6 +74,14 @@ export class Operation {
       });
     } else {
       this.status = STATUS.WAITING;
+    }
+
+    try {
+      await validateBeforeStart(params.id);
+    } catch (e) {
+      log.error('validateBeforeStart', { error: e });
+      
+      this.status === STATUS.ERROR;
     }
 
     if (this.status === STATUS.WAITING || this.status === STATUS.IN_PROGRESS) {

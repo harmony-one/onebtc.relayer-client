@@ -2,7 +2,7 @@ import EventEmitter = require('events');
 import { DataLayerService, ILogEventsService, IssueRequest, IssueRequestEvent } from '../../common';
 
 import logger from '../../../logger';
-import {findTxByRedeemId, getTxByParams} from '../../../bitcoin/rpc';
+import { findTxByRedeemId, getTxByParams } from '../../../bitcoin/rpc';
 const log = logger.module('Issues:main');
 
 const bitcoin = require('bitcoinjs-lib');
@@ -58,7 +58,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
       setTimeout(this.syncData, 100);
 
-      if(['vault', 'security'].includes(process.env.MODE)) {
+      if (['vault', 'security'].includes(process.env.MODE)) {
         setTimeout(this.checkIssues, 100);
       }
 
@@ -87,7 +87,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
       let issue;
 
-      if(!issueInfo || issueInfo.status === '0') {
+      if (!issueInfo || issueInfo.status === '0') {
         issue = { ...issueInfo, requester, id, script, btcAddress, amount, status: '0' };
       } else {
         issue = { ...issueInfo, requester, id, script };
@@ -116,6 +116,18 @@ export class IssueService extends DataLayerService<IssueRequest> {
     }
   };
 
+  getIssueFromChain = async (id: string) => {
+    const issueDB = await this.find(id);
+
+    if (issueDB) {
+      const { requester } = issueDB;
+
+      const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
+
+      return issueInfo;
+    }
+  };
+
   syncData = async () => {
     try {
       // TODO: next requests not parallel - need to optimise fro 20+ items
@@ -124,10 +136,10 @@ export class IssueService extends DataLayerService<IssueRequest> {
           const { requester, id } = item;
 
           const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
-          
+
           let issueUpd;
 
-          if(issueInfo.status === '0') {
+          if (issueInfo.status === '0') {
             issueUpd = { ...item, requester, id };
           } else {
             issueUpd = { ...issueInfo, requester, id };
@@ -181,7 +193,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
         const dbIssue = await this.find(issue.id);
 
-        if(!dbIssue) {
+        if (!dbIssue) {
           const event: any = {
             returnValues: {
               requester: issue.requester,
@@ -190,16 +202,16 @@ export class IssueService extends DataLayerService<IssueRequest> {
               vaultId: issue.vault,
               fee: issue.fee,
               [this.idEventKey]: issue.id,
-            }
+            },
           };
 
           await this.addIssue(event);
         }
-      }  
+      }
     } catch (e) {
       log.error(`checkIssues ${this.dbCollectionPrefix}`, { error: e });
     }
 
     setTimeout(this.checkIssues, 120 * 1000);
-  }
+  };
 }

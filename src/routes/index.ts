@@ -82,10 +82,9 @@ export const routes = (app, services: IServices) => {
     })
   );
 
-
   interface VaultFilters {
-    collateral?: { '$ne': string },
-    lastPing?: { '$gte': number },
+    collateral?: { $ne: string };
+    lastPing?: { $gte: number };
   }
 
   app.get(
@@ -93,19 +92,19 @@ export const routes = (app, services: IServices) => {
     asyncHandler(async (req, res) => {
       const { size = 50, page = 0, id, sort, hasCollateral, online } = req.query;
 
-      const sorting = parseSort(sort, {collateral: -1, lastUpdate: -1});
+      const sorting = parseSort(sort, { collateral: -1, lastUpdate: -1 });
 
       const filter: VaultFilters = {};
 
       if (hasCollateral) {
-        filter.collateral = {'$ne': '0'};
+        filter.collateral = { $ne: '0' };
       }
 
       if (online) {
-        filter.lastPing = {'$gte': Date.now() - 1000 * 60 * 5 } // 5 min
+        filter.lastPing = { $gte: Date.now() - 1000 * 60 * 5 }; // 5 min
       }
 
-      const data = await services.vaults.getData({ size, page, id, sort: sorting, filter});
+      const data = await services.vaults.getData({ size, page, id, sort: sorting, filter });
       return res.json(data);
     })
   );
@@ -202,7 +201,7 @@ export const routes = (app, services: IServices) => {
         network: process.env.NETWORK,
         btcNodeUrl: process.env.BTC_NODE_URL,
         hmyNodeUrl: process.env.HMY_NODE_URL,
-      }
+      };
 
       let relayEvents = {};
 
@@ -307,10 +306,10 @@ export const routes = (app, services: IServices) => {
       const { collection } = req.params;
 
       const collections = {
-        'vaults': 'vaults',
-        'redeemed': 'redeemed_new',
-        'issued': 'issued_new',
-      }
+        vaults: 'vaults',
+        redeemed: 'redeemed_new',
+        issued: 'issued_new',
+      };
 
       const data = await services.history.getHistoryData(
         {
@@ -346,7 +345,7 @@ export const routes = (app, services: IServices) => {
         page,
         sort: { timestamp: -1 },
         filter: {
-          height: height && Number(height), 
+          height: height && Number(height),
           hasUnPermittedTxs: strToBoolean(hasUnPermittedTxs),
           id,
         },
@@ -360,14 +359,14 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/security/txs',
     asyncHandler(async (req, res) => {
-      const { 
-        size = 50, 
-        page = 0, 
-        height, 
-        btcAddress, 
-        permitted, 
-        transactionHash, 
-        vault 
+      const {
+        size = 50,
+        page = 0,
+        height,
+        btcAddress,
+        permitted,
+        transactionHash,
+        vault,
       } = req.query;
 
       const data = await services.vaultsBlocker.getData({
@@ -375,11 +374,11 @@ export const routes = (app, services: IServices) => {
         page,
         sort: { timestamp: -1 },
         filter: {
-          height: height && Number(height), 
-          btcAddress, 
-          permitted: strToBoolean(permitted), 
-          transactionHash, 
-          vault
+          height: height && Number(height),
+          btcAddress,
+          permitted: strToBoolean(permitted),
+          transactionHash,
+          vault,
         },
       });
 
@@ -405,7 +404,7 @@ export const routes = (app, services: IServices) => {
 
         case MANAGER_ACTION.CANCEL:
           result = await services.vaultClient.cancelOperation(otherParams.operationId);
-          break;  
+          break;
       }
 
       return res.json({ result, status: true });
@@ -458,7 +457,7 @@ export const routes = (app, services: IServices) => {
     asyncHandler(async (req, res) => {
       const data = await services.wrongPayment.getLastCheck(req.params.vault);
 
-      data.content.sort((a, b) => a.type > b.type ?  -1 : 1);
+      data.content.sort((a, b) => (a.type > b.type ? -1 : 1));
 
       res.header('Content-Type', 'application/json');
       res.send(JSON.stringify(data, null, 4));
@@ -475,6 +474,39 @@ export const routes = (app, services: IServices) => {
     })
   );
 
+  app.get(
+    '/outputs/:vault/balances',
+    asyncHandler(async (req, res) => {
+      const data = await services.vaultClient.walletBTC.getBalances(req.params.vault);
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/outputs/:vault/total-balance',
+    asyncHandler(async (req, res) => {
+      const data = await services.vaultClient.walletBTC.getTotalBalance(req.params.vault);
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/outputs/:vault/:amount',
+    asyncHandler(async (req, res) => {
+      const data = await services.vaultClient.walletBTC.getOutputsByAmount(
+        req.params.amount,
+        req.params.vault
+      );
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
   app.post(
     '/check-txs/return',
     asyncHandler(async (req, res) => {
@@ -482,7 +514,7 @@ export const routes = (app, services: IServices) => {
 
       const wrongPayTx = await services.wrongPayment.find(tx);
 
-      if(!wrongPayTx) {
+      if (!wrongPayTx) {
         throw new Error('Transaction not found');
       }
 
