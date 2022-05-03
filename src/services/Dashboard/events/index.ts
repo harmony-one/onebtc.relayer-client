@@ -78,7 +78,7 @@ export class LogEvents {
         this.lastBlock = Number(this.lastBlock) - 200000; // reload last 4 days on restart
       }
 
-      this.lastBlock = 22740000; // 02.09.2022 - launch date
+      // this.lastBlock = 22740000; // 02.09.2022 - launch date
 
       setTimeout(this.readEvents, 100);
 
