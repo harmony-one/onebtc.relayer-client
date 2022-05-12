@@ -81,7 +81,7 @@ export class Operation {
     } catch (e) {
       log.error('validateBeforeStart', { error: e });
       
-      this.status === STATUS.ERROR;
+      this.status = STATUS.ERROR;
     }
 
     if (this.status === STATUS.WAITING || this.status === STATUS.IN_PROGRESS) {
