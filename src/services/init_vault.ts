@@ -4,7 +4,7 @@ import { abi as oneBtcAbi } from '../abi/OneBtc';
 import { LogEvents, IssueService } from './Dashboard';
 import { VaultClient } from './VaultClient';
 import { RelayerClient } from './Relayer';
-import {VaultSettingService} from "./VaultClient/VaultSettings/VaultSettings";
+import { VaultSettingService } from './VaultClient/VaultSettings/VaultSettings';
 import { WrongPaymentMonitor } from './WrongPaymentMonitor';
 
 export interface IServices {
@@ -53,7 +53,7 @@ export const InitVault = async (): Promise<IServices> => {
     methodName: 'issueRequests',
     idEventKey: 'issueId',
     listenTxs: true,
-    services
+    services,
   });
 
   services.redeems = new IssueService({
@@ -66,6 +66,7 @@ export const InitVault = async (): Promise<IServices> => {
     methodName: 'redeemRequests',
     idEventKey: 'redeemId',
     listenTxs: true,
+    services,
   });
 
   services.onebtcEvents = new LogEvents({
@@ -83,7 +84,7 @@ export const InitVault = async (): Promise<IServices> => {
     eventEmitter,
     database: services.database,
     services,
-  }) 
+  });
 
   await services.wrongPayment.start();
 
