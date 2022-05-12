@@ -68,16 +68,16 @@ export const InitServices = async (): Promise<IServices> => {
     await services.oracleClient.start();
   }
 
-  services.vaultClient = new VaultClient({
-    database: databaseService,
-    dbCollectionPrefix: 'vault-client',
-    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
-    contractAbi: oneBtcAbi,
-    eventEmitter,
-    services,
-  });
+  // services.vaultClient = new VaultClient({
+  //   database: databaseService,
+  //   dbCollectionPrefix: 'vault-client',
+  //   contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
+  //   contractAbi: oneBtcAbi,
+  //   eventEmitter,
+  //   services,
+  // });
 
-  await services.vaultClient.start();
+  // await services.vaultClient.start();
 
   services.vaults = new VaultsService({
     database: databaseService,
