@@ -37,7 +37,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
     this.eventName = params.eventName;
     this.methodName = params.methodName;
     this.idEventKey = params.idEventKey;
-    // this.eventEmitter.on(params.eventName, this.addIssue);
+    this.eventEmitter.on(params.eventName, this.addIssue);
     this.services = params.services;
   }
 
@@ -62,7 +62,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
       setTimeout(this.syncData, 100);
 
-      if (['vault', 'security'].includes(process.env.MODE)) {
+      if (['vault', 'security'].includes(process.env.MODE) || !!this.services) {
         setTimeout(this.checkIssues, 100);
       }
 
