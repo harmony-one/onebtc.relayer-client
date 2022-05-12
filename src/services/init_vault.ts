@@ -53,9 +53,8 @@ export const InitVault = async (): Promise<IServices> => {
     methodName: 'issueRequests',
     idEventKey: 'issueId',
     listenTxs: true,
+    services
   });
-
-  await services.issues.start();
 
   services.redeems = new IssueService({
     database: databaseService,
@@ -68,8 +67,6 @@ export const InitVault = async (): Promise<IServices> => {
     idEventKey: 'redeemId',
     listenTxs: true,
   });
-
-  await services.redeems.start();
 
   services.onebtcEvents = new LogEvents({
     database: databaseService,
@@ -100,6 +97,8 @@ export const InitVault = async (): Promise<IServices> => {
   });
 
   await services.vaultClient.start();
+  await services.issues.start();
+  await services.redeems.start();
 
   return services;
 };

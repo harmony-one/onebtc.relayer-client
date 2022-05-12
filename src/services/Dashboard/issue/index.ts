@@ -8,6 +8,7 @@ const log = logger.module('Issues:main');
 const bitcoin = require('bitcoinjs-lib');
 import BN from 'bn.js';
 import axios from 'axios';
+import { IServices } from 'src/services/init_vault';
 
 export interface IIssueService extends ILogEventsService {
   eventEmitter: EventEmitter;
@@ -15,6 +16,7 @@ export interface IIssueService extends ILogEventsService {
   methodName: string;
   idEventKey: string;
   listenTxs?: boolean;
+  services?: IServices;
 }
 
 export class IssueService extends DataLayerService<IssueRequest> {
@@ -24,6 +26,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
   methodName: string;
   idEventKey: string;
   listenTxs: boolean;
+  services?: IServices;
 
   constructor(params: IIssueService) {
     super(params);
@@ -34,7 +37,8 @@ export class IssueService extends DataLayerService<IssueRequest> {
     this.eventName = params.eventName;
     this.methodName = params.methodName;
     this.idEventKey = params.idEventKey;
-    this.eventEmitter.on(params.eventName, this.addIssue);
+    // this.eventEmitter.on(params.eventName, this.addIssue);
+    this.services = params.services;
   }
 
   async start() {
@@ -180,7 +184,16 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
   checkIssues = async () => {
     try {
-      const dataUrl = `${process.env.DASHBOARD_URL}/${this.dbCollectionPrefix}/data?size=10`;
+      const prefix = `${this.idEventKey.replace('Id', '')}s`;
+      const vaultInfo = await this.services?.vaultClient?.info();
+
+      let dataUrl;
+
+      if (vaultInfo?.vaultAddress) {
+        dataUrl = `${process.env.DASHBOARD_URL}/${prefix}/data?size=20&vault=${vaultInfo.vaultAddress}`;
+      } else {
+        dataUrl = `${process.env.DASHBOARD_URL}/${prefix}/data?size=20`;
+      }
 
       const res = await axios.get(dataUrl);
 
