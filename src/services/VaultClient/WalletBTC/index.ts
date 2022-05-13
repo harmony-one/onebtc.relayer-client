@@ -216,7 +216,10 @@ export class WalletBTC {
     const freeOutputs = await this.getFreeOutputs(Number(params.amount) + fee);
 
     if (createdTx) {
-      if (createdTx.inputs.some((input, idx) => input.prevout.hash !== freeOutputs[idx].hash)) {
+      if (
+        createdTx.inputs.some((input, idx) => input.prevout.hash !== freeOutputs[idx].hash) ||
+        createdTx.inputs.length !== freeOutputs.length
+      ) {
         throw new Error('Replace TX error - different inputs');
       } else {
         log.info('Replace validation is ok');
