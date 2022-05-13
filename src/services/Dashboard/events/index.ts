@@ -69,6 +69,10 @@ export class LogEvents {
     try {
       this.lastBlock = await getContractDeploymentBlock(this.contractAddress);
       this.startBlock = this.lastBlock;
+      // this.lastBlock = 22740000; // 02.09.2022 - launch date
+
+      this.lastNodeBlock = await this.web3.eth.getBlockNumber();
+      const defStartBlock = Number(this.lastNodeBlock) - 250000;
 
       const req = await this.getAllEvents({ size: 1, page: 0, sort: { blockNumber: -1 } });
 
@@ -78,7 +82,8 @@ export class LogEvents {
         this.lastBlock = Number(this.lastBlock) - 100000; // reload last 2 days on restart
       }
 
-      // this.lastBlock = 22740000; // 02.09.2022 - launch date
+      this.lastBlock = Math.max(this.lastBlock, defStartBlock);
+      this.startBlock = this.lastBlock;
 
       setTimeout(this.readEvents, 100);
 

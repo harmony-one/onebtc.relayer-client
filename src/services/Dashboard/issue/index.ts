@@ -190,9 +190,9 @@ export class IssueService extends DataLayerService<IssueRequest> {
       let dataUrl;
 
       if (vaultInfo?.vaultAddress) {
-        dataUrl = `${process.env.DASHBOARD_URL}/${prefix}/data?size=20&vault=${vaultInfo.vaultAddress}`;
+        dataUrl = `${process.env.DASHBOARD_URL}/${prefix}/data?size=30&vault=${vaultInfo.vaultAddress}`;
       } else {
-        dataUrl = `${process.env.DASHBOARD_URL}/${prefix}/data?size=20`;
+        dataUrl = `${process.env.DASHBOARD_URL}/${prefix}/data?size=30`;
       }
 
       const res = await axios.get(dataUrl);
@@ -225,6 +225,6 @@ export class IssueService extends DataLayerService<IssueRequest> {
       log.error(`checkIssues ${this.dbCollectionPrefix}`, { error: e });
     }
 
-    setTimeout(this.checkIssues, 120 * 1000);
+    setTimeout(this.checkIssues, 180 * 1000);
   };
 }
