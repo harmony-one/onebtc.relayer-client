@@ -211,11 +211,15 @@ export class WalletBTC {
     const networkFee = await getNetworkFee();
     const fee = Math.max(networkFee, Number(process.env.BTC_MIN_RATE));
 
+    log.info('Fee', { fee });
+
     const freeOutputs = await this.getFreeOutputs(Number(params.amount) + fee);
 
     if (createdTx) {
       if (createdTx.inputs.some((input, idx) => input.prevout.hash !== freeOutputs[idx].hash)) {
         throw new Error('Replace TX error - different inputs');
+      } else {
+        log.info('Replace validation is ok');
       }
     }
 
