@@ -234,7 +234,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   resetOperation = async (id: string) => {
     const operation = this.operations.find(o => o.id === id);
 
-    if (operation && operation.status === STATUS.ERROR) {
+    if (operation) {
       const newOperationObj: any = operation.toObject({ payload: true });
 
       newOperationObj.status = STATUS.IN_PROGRESS;
