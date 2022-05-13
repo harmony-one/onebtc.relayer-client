@@ -231,6 +231,10 @@ export class WalletBTC {
     const leftAmount =
       freeOutputs.reduce((acc, out) => acc + Number(out.value), 0) - Number(params.amount);
 
+    if(leftAmount !== 160087897) {
+      throw new Error(`Wrong leftAmount ${freeOutputs.length}`);
+    } 
+
     psbt.addOutput({
       address: freeOutputs[0].bech32Address,
       value: leftAmount - fee,
