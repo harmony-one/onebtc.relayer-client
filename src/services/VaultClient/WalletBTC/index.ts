@@ -213,6 +213,12 @@ export class WalletBTC {
 
     const freeOutputs = await this.getFreeOutputs(Number(params.amount) + fee);
 
+    if (createdTx) {
+      if (createdTx.inputs.some((input, idx) => input.prevout.hash !== freeOutputs[idx].hash)) {
+        throw new Error('Replace TX error - different inputs');
+      }
+    }
+
     freeOutputs.forEach(output => {
       const utxo = Buffer.from(output.hex, 'hex');
 
@@ -230,10 +236,6 @@ export class WalletBTC {
 
     const leftAmount =
       freeOutputs.reduce((acc, out) => acc + Number(out.value), 0) - Number(params.amount);
-
-    if(leftAmount !== 160087897) {
-      throw new Error(`Wrong leftAmount ${freeOutputs.length}`);
-    } 
 
     psbt.addOutput({
       address: freeOutputs[0].bech32Address,
