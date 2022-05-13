@@ -259,7 +259,7 @@ export class WalletBTC {
         freeOutputs,
       });
 
-      throw new Error('Can not sign for this input with the key');
+      throw new Error(`Can not sign for this input with the key, {freeOutputs[idx].id}`);
     }
 
     log.info('Tx before send', {
