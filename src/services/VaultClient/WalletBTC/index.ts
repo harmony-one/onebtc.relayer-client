@@ -123,7 +123,10 @@ export class WalletBTC {
         0,
         process.env.BTC_TC_PREFIX
       );
-      const txs = await getTxsByAddress(bech32Address);
+      let txs = await getTxsByAddress(bech32Address);
+
+      txs = txs.filter(tx => tx.confirmations > 0 && tx.height > -1);
+
       let outputs = getActualOutputs(txs, bech32Address);
 
       outputs.forEach(out => {
@@ -181,7 +184,7 @@ export class WalletBTC {
       script: emb.output.toString('hex'),
     });
 
-    if (createdTx) {
+    if (createdTx && createdTx.height > -1) {
       log.info('Transaction already created - skip send BTC', {
         id: params.id,
         tx: createdTx.hash,
