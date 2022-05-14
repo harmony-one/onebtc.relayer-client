@@ -77,15 +77,35 @@ export class Operation {
     }
 
     try {
-      await validateBeforeStart(params.id);
+      const status = await validateBeforeStart(params.id);
+
+      switch (status) {
+        case 0:
+          this.status = STATUS.ERROR;
+          break;
+
+        case 1:
+          this.status = STATUS.IN_PROGRESS;
+          break;
+
+        case 2:
+          this.status = STATUS.SUCCESS;
+          break;
+
+        case 3:
+          this.status = STATUS.CANCELED;
+          break;
+      }
     } catch (e) {
       log.error('validateBeforeStart', { error: e });
-      
+
       this.status = STATUS.ERROR;
     }
 
     if (this.status === STATUS.WAITING || this.status === STATUS.IN_PROGRESS) {
       this.startActionsPool();
+    } else {
+      await this.syncOperationCallback(this);
     }
   };
 

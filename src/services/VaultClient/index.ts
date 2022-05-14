@@ -189,16 +189,6 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
       throw new Error('Redeem not found');
     }
 
-    if (redeem.status !== '1') {
-      log.error('checkRedeemStatus', {
-        error: `Incorrect redeem status ${redeem.status}`,
-        redeem,
-        redeemId,
-      });
-
-      throw new Error(`Incorrect redeem status ${redeem.status}`);
-    }
-
     if (!this.isCorrectVault(redeem.vault)) {
       log.error('checkRedeemStatus', {
         error: `Incorrect redeem vault ${redeem.vault}`,
@@ -208,6 +198,18 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
       throw new Error(`Incorrect redeem vault ${redeem.vault}`);
     }
+
+    if (redeem.status !== '1') {
+      log.error('checkRedeemStatus', {
+        error: `Incorrect redeem status ${redeem.status}`,
+        redeem,
+        redeemId,
+      });
+
+      // throw new Error(`Incorrect redeem status ${redeem.status}`);
+    }
+
+    return Number(redeem.status);
   };
 
   cancelOperation = async (id: string) => {

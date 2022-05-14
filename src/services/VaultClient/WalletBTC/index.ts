@@ -187,7 +187,7 @@ export class WalletBTC {
       script: emb.output.toString('hex'),
     });
 
-    if (createdTx && createdTx.height > -1) {
+    if (createdTx /*&& createdTx.height > -1*/) {
       log.info('Transaction already created - skip send BTC', {
         id: params.id,
         tx: createdTx.hash,
@@ -296,7 +296,7 @@ export class WalletBTC {
 
       const fee = hexToBytes(transactionHex).length * satoshiPerByte;
 
-      return fee * 4;
+      return fee;
     }
 
     log.info('Tx before send', {
