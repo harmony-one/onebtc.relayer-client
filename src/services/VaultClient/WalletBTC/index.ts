@@ -166,7 +166,7 @@ export class WalletBTC {
       })
     );
 
-  sendTx = async (params: { amount: string; to: string; id: string }) => {
+  sendTx = async (params: { amount: string; to: string; id: string }, calculateFee = false) => {
     let toBech32Address;
 
     if (params.to.startsWith(process.env.BTC_TC_PREFIX)) {
@@ -202,6 +202,12 @@ export class WalletBTC {
     }
     // search the same tx -- end
 
+    let realFee = 0;
+
+    if (!calculateFee) {
+      realFee = (await this.sendTx(params, true)) as any;
+    }
+
     const psbt = new bitcoin.Psbt({
       network:
         process.env.HMY_NETWORK === 'testnet' ? bitcoin.networks.testnet : bitcoin.networks.bitcoin,
@@ -211,11 +217,11 @@ export class WalletBTC {
     psbt.setLocktime(0); // These are defaults. This line is not needed.
 
     const networkFee = await getNetworkFee();
-    const prevFee = Math.max(networkFee, Number(process.env.BTC_MIN_RATE));
+    const fee = Math.max(networkFee, realFee, Number(process.env.BTC_MIN_RATE));
 
     // hexToBytes(hex).length * 13 / 1e8
 
-    const freeOutputs = await this.getFreeOutputs(Number(params.amount) + prevFee);
+    const freeOutputs = await this.getFreeOutputs(Number(params.amount) + fee);
 
     if (createdTx) {
       if (
@@ -240,11 +246,6 @@ export class WalletBTC {
       address: toBech32Address,
       value: Number(params.amount),
     });
-
-    const prevHex = psbt.extractTransaction().toHex();
-    const satoshiPerByte = await getNetworkFeeSatoshiPerByte();
-
-    const fee = Math.max(hexToBytes(prevHex).length * satoshiPerByte, prevFee);
 
     const leftAmount =
       freeOutputs.reduce((acc, out) => acc + Number(out.value), 0) - Number(params.amount);
@@ -292,17 +293,27 @@ export class WalletBTC {
       throw new Error(`Can not sign for this input with the key, ${freeOutputs[idx]?.id}`);
     }
 
-    log.info('Tx before send', {
-      tx: {
-        txOutputs: psbt.txOutputs,
-        txInputs: psbt.txInputs,
-        fee,
-        leftAmount,
-        amount: params.amount,
-      },
-    });
+    if (!calculateFee) {
+      log.info('Tx before send', {
+        tx: {
+          txOutputs: psbt.txOutputs,
+          txInputs: psbt.txInputs,
+          fee,
+          leftAmount,
+          amount: params.amount,
+        },
+      });
+    }
 
     const transactionHex = psbt.extractTransaction().toHex();
+
+    if (calculateFee) {
+      const satoshiPerByte = await getNetworkFeeSatoshiPerByte();
+
+      const fee = hexToBytes(transactionHex).length * satoshiPerByte;
+
+      return fee;
+    }
 
     const res = await axios.post(`${process.env.BTC_NODE_URL}/broadcast`, {
       tx: transactionHex,
