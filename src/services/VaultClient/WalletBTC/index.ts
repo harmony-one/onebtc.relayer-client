@@ -7,8 +7,10 @@ import logger from '../../../logger';
 import {
   findTxByScript,
   getNetworkFee,
+  getNetworkFeeSatoshiPerByte,
   getTxsByAddress,
   searchTxByHex,
+  hexToBytes,
 } from '../../../bitcoin/rpc';
 import { IssueRequest } from '../../common';
 import { Buffer } from 'buffer';
@@ -209,11 +211,11 @@ export class WalletBTC {
     psbt.setLocktime(0); // These are defaults. This line is not needed.
 
     const networkFee = await getNetworkFee();
-    const fee = Math.max(networkFee, Number(process.env.BTC_MIN_RATE));
+    const prevFee = Math.max(networkFee, Number(process.env.BTC_MIN_RATE));
 
-    log.info('Fee', { fee });
+    // hexToBytes(hex).length * 13 / 1e8
 
-    const freeOutputs = await this.getFreeOutputs(Number(params.amount) + fee);
+    const freeOutputs = await this.getFreeOutputs(Number(params.amount) + prevFee);
 
     if (createdTx) {
       if (
@@ -221,8 +223,6 @@ export class WalletBTC {
         createdTx.inputs.length !== freeOutputs.length
       ) {
         throw new Error('Replace TX error - different inputs');
-      } else {
-        log.info('Replace validation is ok');
       }
     }
 
@@ -241,8 +241,21 @@ export class WalletBTC {
       value: Number(params.amount),
     });
 
+    const prevHex = psbt.extractTransaction().toHex();
+    const satoshiPerByte = await getNetworkFeeSatoshiPerByte();
+
+    const fee = Math.max(hexToBytes(prevHex).length * satoshiPerByte, prevFee);
+
     const leftAmount =
       freeOutputs.reduce((acc, out) => acc + Number(out.value), 0) - Number(params.amount);
+
+    if (fee > leftAmount) {
+      throw new Error(`Fee more than left amount`);
+    }
+
+    if (fee > 150000) {
+      throw new Error(`Fee more than 150000`);
+    }
 
     psbt.addOutput({
       address: freeOutputs[0].bech32Address,
