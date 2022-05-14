@@ -254,10 +254,6 @@ export class WalletBTC {
       throw new Error(`Fee more than left amount`);
     }
 
-    if (fee > 150000) {
-      throw new Error(`Fee more than 150000`);
-    }
-
     psbt.addOutput({
       address: freeOutputs[0].bech32Address,
       value: leftAmount - fee,
@@ -293,18 +289,6 @@ export class WalletBTC {
       throw new Error(`Can not sign for this input with the key, ${freeOutputs[idx]?.id}`);
     }
 
-    if (!calculateFee) {
-      log.info('Tx before send', {
-        tx: {
-          txOutputs: psbt.txOutputs,
-          txInputs: psbt.txInputs,
-          fee,
-          leftAmount,
-          amount: params.amount,
-        },
-      });
-    }
-
     const transactionHex = psbt.extractTransaction().toHex();
 
     if (calculateFee) {
@@ -313,6 +297,21 @@ export class WalletBTC {
       const fee = hexToBytes(transactionHex).length * satoshiPerByte;
 
       return fee;
+    }
+
+    log.info('Tx before send', {
+      tx: {
+        // txOutputs: psbt.txOutputs,
+        // txInputs: psbt.txInputs,
+        fee,
+        leftAmount,
+        amount: params.amount,
+        transactionHex,
+      },
+    });
+
+    if (fee > 3500000) {
+      throw new Error(`Fee more than 3500000`);
     }
 
     const res = await axios.post(`${process.env.BTC_NODE_URL}/broadcast`, {
