@@ -296,7 +296,7 @@ export class WalletBTC {
 
       const fee = hexToBytes(transactionHex).length * satoshiPerByte;
 
-      return fee;
+      return fee * 4;
     }
 
     log.info('Tx before send', {
