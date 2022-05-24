@@ -98,15 +98,31 @@ export const getNetworkFeeSatoshiPerByte = async () => {
 
 export const getTxsByAddress = async (bech32Address: string) => {
   try {
-    const response = await axios.get(`${process.env.BTC_NODE_URL}/tx/address/${bech32Address}`);
+    let data = [];
+    let requestLength = -1;
+    let lastTxId = '';
 
-    return response.data;
+    while (requestLength < 0 || requestLength === 100) {
+      const response = await axios.get(
+        `${process.env.BTC_NODE_URL}/tx/address/${bech32Address}?limit=100&after=${lastTxId}`
+      );
+
+      requestLength = response.data.length;
+
+      if (requestLength) {
+        lastTxId = response.data[requestLength - 1].hash;
+        data = data.concat(response.data);
+      }
+    }
+
+    return data;
   } catch (e) {
     log.error('Error getTransactionByAddress', {
       error: e,
       bech32Address,
       url: process.env.BTC_NODE_URL,
     });
+    return [];
   }
 };
 

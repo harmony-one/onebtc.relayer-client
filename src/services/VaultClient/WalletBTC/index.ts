@@ -89,8 +89,6 @@ export class WalletBTC {
     '93300159680157977562922029065933448796220752306205143836524272577377336881',
   ];
 
-  ignoreTxsList = ['fc31fcbc171e1ea108a84e9f9414f32ce5e35c2aa8885b653b9469efa2006aaf'];
-
   getOutputsByAmount = async (amount: number, vaultId: string) => {
     const outs = await this.getFreeOutputs(amount, false, vaultId);
 
@@ -130,9 +128,7 @@ export class WalletBTC {
       );
       let txs = await getTxsByAddress(bech32Address);
 
-      txs = txs.filter(
-        tx => tx.confirmations > 0 && tx.height > -1 && !this.ignoreTxsList.includes(tx.hash)
-      );
+      txs = txs.filter(tx => tx.confirmations > 0 && tx.height > -1);
 
       let outputs = getActualOutputs(txs, bech32Address);
 
