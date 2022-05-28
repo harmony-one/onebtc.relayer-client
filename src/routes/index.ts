@@ -1,6 +1,7 @@
 import { asyncHandler, parseSort, strToBoolean } from './helpers';
 import { IServices } from '../services/init';
 import { OPERATION_TYPE } from '../services/VaultClient/interfaces';
+import { getTxsByAddress } from '../bitcoin/rpc';
 
 export enum MANAGER_ACTION {
   RESET = 'reset',
@@ -501,6 +502,16 @@ export const routes = (app, services: IServices) => {
         req.params.amount,
         req.params.vault
       );
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(data, null, 4));
+    })
+  );
+
+  app.get(
+    '/getTxsByAddress/:tx',
+    asyncHandler(async (req, res) => {
+      const data = await getTxsByAddress(req.params.tx);
 
       res.header('Content-Type', 'application/json');
       res.send(JSON.stringify(data, null, 4));
