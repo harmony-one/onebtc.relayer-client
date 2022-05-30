@@ -301,7 +301,7 @@ export const routes = (app, services: IServices) => {
   app.get(
     '/history/:collection',
     asyncHandler(async (req, res) => {
-      const { size = 50, page = 0, step = 'h' } = req.query;
+      const { size = 50, page = 0, step = 'h', interval } = req.query;
       const { collection } = req.params;
 
       const collections = {
@@ -309,13 +309,26 @@ export const routes = (app, services: IServices) => {
         'redeemed': 'redeemed_new',
         'issued': 'issued_new',
       }
+      const collectionName = `history_${collections[collection]}`;
+
+      if (interval === 'week') {
+        const data = await services.history.getHistoryWeekData({collectionName});
+        res.send(data);
+        return;
+      }
+
+      if (interval === 'month') {
+        const data = await services.history.getHistoryMonthData({collectionName});
+        res.send(data);
+        return;
+      }
 
       const data = await services.history.getHistoryData(
         {
           size,
           page,
           sort: { dateTimestamp: -1 },
-          collectionName: `history_${collections[collection]}`,
+          collectionName,
         },
         step
       );

@@ -157,4 +157,74 @@ export class HistoryService extends DataLayerService<any> {
 
     return await this.getData(params);
   };
+
+  getHistoryWeekData = async (params: {collectionName: string}) => {
+    const collectionName = params.collectionName || `${this.dbCollectionPrefix}_data`;
+    const collection = this.database.db.collection(collectionName);
+
+    const data = await collection.aggregate([
+      {
+        "$project": {
+          "week": { "$week": {'$toDate': "$date"} },
+          "amountPerDay": "$amountPerDay",
+          "date": "$date",
+          "total": "$total",
+          "dateTimestamp": "$dateTimestamp"
+        }
+      },
+      {
+        "$group": {
+          "_id": "$week",
+          "amountPerWeek": { "$sum": "$amountPerDay" },
+          "date": {"$last": "$date"},
+          "total": {"$last": "$total"},
+          "dateTimestamp": {"$last": "$dateTimestamp"}
+        }
+      },
+      {"$sort": {"dateTimestamp": -1}}
+    ]).toArray();
+
+    return {
+      content: data,
+      totalElements: 0,
+      totalPages: 0,
+      size: 0,
+      page: 0
+    }
+  }
+
+  getHistoryMonthData = async (params: {collectionName: string}) => {
+    const collectionName = params.collectionName || `${this.dbCollectionPrefix}_data`;
+    const collection = this.database.db.collection(collectionName);
+
+    const data = await collection.aggregate([
+      {
+        "$project": {
+          "week": { "$month": {'$toDate': "$date"} },
+          "amountPerDay": "$amountPerDay",
+          "date": "$date",
+          "total": "$total",
+          "dateTimestamp": "$dateTimestamp"
+        }
+      },
+      {
+        "$group": {
+          "_id": "$month",
+          "amountPerMonth": { "$sum": "$amountPerDay" },
+          "date": {"$last": "$date"},
+          "total": {"$last": "$total"},
+          "dateTimestamp": {"$last": "$dateTimestamp"}
+        }
+      },
+      {"$sort": {"dateTimestamp": -1}}
+    ]).toArray();
+
+    return {
+      content: data,
+      totalElements: 0,
+      totalPages: 0,
+      size: 0,
+      page: 0
+    }
+  }
 }
