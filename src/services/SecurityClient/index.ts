@@ -159,6 +159,13 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
     return await this.validateSingleTransaction(issue, tx);
   };
 
+  getRedeemByScript = async (script: string) => {
+    if(!script) return null;
+    
+    const issueIdHex = script.slice(4);
+    const issueIdBuffer = Buffer.from(issueIdHex, 'hex');
+  }
+
   validateSingleTransaction = async (issue: IssueRequest, tx: any) => {
     const verifiedTransfer = {
       issueId: issue.id,
@@ -192,6 +199,10 @@ export class SecurityClient extends DataLayerService<IBlockCheckInfo> {
       //search redeem by script
       let req = await this.redeems.getData({ filter: { script: tx.outputs[2].script } });
       redeem = req.content[0];
+
+      // if(!redeem) {
+      //   redeem = await this.getRedeemByScript(tx.outputs[2].script);
+      // }
 
       if (!redeem) {
         verifiedTransfer.output_2_ok = false;

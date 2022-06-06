@@ -38,7 +38,7 @@ export class DataLayerService<T> {
   }
 
   updateOrCreateData = async (data: T & { id: string }) => {
-    await this.database.update(
+    return await this.database.update(
       `${this.dbCollectionPrefix}_data`,
       { id: data.id },
       {

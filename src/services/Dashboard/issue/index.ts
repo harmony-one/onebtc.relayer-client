@@ -2,11 +2,13 @@ import EventEmitter = require('events');
 import { DataLayerService, ILogEventsService, IssueRequest, IssueRequestEvent } from '../../common';
 
 import logger from '../../../logger';
-import {findTxByRedeemId, getTxByParams} from '../../../bitcoin/rpc';
+import { findTxByRedeemId, getTxByParams } from '../../../bitcoin/rpc';
 const log = logger.module('Issues:main');
 
 const bitcoin = require('bitcoinjs-lib');
 import BN from 'bn.js';
+import axios from 'axios';
+import { IServices } from 'src/services/init_vault';
 
 export interface IIssueService extends ILogEventsService {
   eventEmitter: EventEmitter;
@@ -14,6 +16,7 @@ export interface IIssueService extends ILogEventsService {
   methodName: string;
   idEventKey: string;
   listenTxs?: boolean;
+  services?: IServices;
 }
 
 export class IssueService extends DataLayerService<IssueRequest> {
@@ -23,6 +26,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
   methodName: string;
   idEventKey: string;
   listenTxs: boolean;
+  services?: IServices;
 
   constructor(params: IIssueService) {
     super(params);
@@ -34,6 +38,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
     this.methodName = params.methodName;
     this.idEventKey = params.idEventKey;
     this.eventEmitter.on(params.eventName, this.addIssue);
+    this.services = params.services;
   }
 
   async start() {
@@ -56,6 +61,10 @@ export class IssueService extends DataLayerService<IssueRequest> {
       data.content.forEach(item => this.observableData.set(item.id, item));
 
       setTimeout(this.syncData, 100);
+
+      if (['vault', 'security'].includes(process.env.MODE) || !!this.services) {
+        setTimeout(this.checkIssues, 100);
+      }
 
       log.info(`Start ${this.eventName} Service - ok`);
     } catch (e) {
@@ -82,7 +91,7 @@ export class IssueService extends DataLayerService<IssueRequest> {
 
       let issue;
 
-      if(!issueInfo || issueInfo.status === '0') {
+      if (!issueInfo || issueInfo.status === '0') {
         issue = { ...issueInfo, requester, id, script, btcAddress, amount, status: '0' };
       } else {
         issue = { ...issueInfo, requester, id, script };
@@ -111,6 +120,18 @@ export class IssueService extends DataLayerService<IssueRequest> {
     }
   };
 
+  getIssueFromChain = async (id: string) => {
+    const issueDB = await this.find(id);
+
+    if (issueDB) {
+      const { requester } = issueDB;
+
+      const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
+
+      return issueInfo;
+    }
+  };
+
   syncData = async () => {
     try {
       // TODO: next requests not parallel - need to optimise fro 20+ items
@@ -119,10 +140,10 @@ export class IssueService extends DataLayerService<IssueRequest> {
           const { requester, id } = item;
 
           const issueInfo = await this.contract.methods[this.methodName](requester, id).call();
-          
+
           let issueUpd;
 
-          if(issueInfo.status === '0') {
+          if (issueInfo.status === '0') {
             issueUpd = { ...item, requester, id };
           } else {
             issueUpd = { ...issueInfo, requester, id };
@@ -159,5 +180,51 @@ export class IssueService extends DataLayerService<IssueRequest> {
     }
 
     setTimeout(this.syncData, this.waitInterval);
+  };
+
+  checkIssues = async () => {
+    try {
+      const prefix = `${this.idEventKey.replace('Id', '')}s`;
+      const vaultInfo = await this.services?.vaultClient?.info();
+
+      let dataUrl;
+
+      if (vaultInfo?.vaultAddress) {
+        dataUrl = `${process.env.DASHBOARD_URL}/${prefix}/data?size=30&vault=${vaultInfo.vaultAddress}`;
+      } else {
+        dataUrl = `${process.env.DASHBOARD_URL}/${prefix}/data?size=30`;
+      }
+
+      const res = await axios.get(dataUrl);
+
+      // console.log(`DATA ${this.dbCollectionPrefix}: `, res.data.content);
+
+      const issues = res.data.content;
+
+      for (let i = 0; i < issues.length; i++) {
+        const issue = issues[i];
+
+        const dbIssue = await this.find(issue.id);
+
+        if (!dbIssue) {
+          const event: any = {
+            returnValues: {
+              requester: issue.requester,
+              btcAddress: issue.btcAddress,
+              amount: issue.amount,
+              vaultId: issue.vault,
+              fee: issue.fee,
+              [this.idEventKey]: issue.id,
+            },
+          };
+
+          await this.addIssue(event);
+        }
+      }
+    } catch (e) {
+      log.error(`checkIssues ${this.dbCollectionPrefix}`, { error: e });
+    }
+
+    setTimeout(this.checkIssues, 180 * 1000);
   };
 }

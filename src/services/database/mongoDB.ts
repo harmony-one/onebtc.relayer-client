@@ -118,6 +118,71 @@ export class DBService {
       return [];
     }
   };
+
+  public createIndexWithUniqueKey = async (collectionName: string, indexKey: string) => {
+    try {
+      log.info(`Start ${collectionName} index creating`, { collectionName });
+      const start = Date.now();
+
+      await this.db.createIndex(collectionName, { [indexKey]: 1 }, { unique: true });
+
+      log.info(`End ${collectionName} index creating`, {  
+        collectionName, 
+        time: (Date.now() - start) / 1000 
+      });
+    } catch(e)  {
+      log.error(`Error ${collectionName} index creating`, { error: e, collectionName });
+    }
+  }
+
+  public copyCollectionByUniqueKey = async (
+    oldCollection: string,  
+    newCollection: string,
+    indexKey: string
+  ) => {
+    try {
+      log.info(`Start ${oldCollection} collection copy`, { 
+        oldCollection, newCollection, indexKey 
+      });
+      const start = Date.now();
+
+      const total = await this.getCollectionCount(oldCollection);
+
+      let from = 0;
+      const size = 100;
+
+      while (from < total)  {
+        const data = await this.getCollectionData(
+          oldCollection,
+          { opentime: -1 },
+          size,
+          from,
+        );
+
+        for(let i = 0; i< data.length; i++) {
+          const record = {...data[i]};
+          delete record._id;
+
+          await this.update(
+            newCollection,
+            { [indexKey]: record[indexKey] },
+            record
+          );
+        }
+
+        from += size;
+      }
+
+      log.info(`End ${oldCollection} collection copy`, {  
+        oldCollection, newCollection, indexKey,  
+        time: (Date.now() - start) / 1000 
+      });
+    } catch(e)  {
+      log.error(`Error ${oldCollection} collection copy`, { 
+        error: e,  oldCollection, newCollection, indexKey 
+      });
+    }
+  }
 }
 
 export const databaseService = new DBService();

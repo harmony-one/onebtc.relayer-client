@@ -4,7 +4,8 @@ import { abi as oneBtcAbi } from '../abi/OneBtc';
 import { LogEvents, IssueService } from './Dashboard';
 import { VaultClient } from './VaultClient';
 import { RelayerClient } from './Relayer';
-import {VaultSettingService} from "./VaultClient/VaultSettings/VaultSettings";
+import { VaultSettingService } from './VaultClient/VaultSettings/VaultSettings';
+import { WrongPaymentMonitor } from './WrongPaymentMonitor';
 
 export interface IServices {
   database?: DBService;
@@ -14,6 +15,7 @@ export interface IServices {
   vaultDbSettings?: VaultSettingService;
   vaultClient?: VaultClient;
   relayerClient?: RelayerClient;
+  wrongPayment?: WrongPaymentMonitor;
 }
 
 export const InitVault = async (): Promise<IServices> => {
@@ -41,17 +43,6 @@ export const InitVault = async (): Promise<IServices> => {
 
   await services.relayerClient.start();
 
-  services.vaultClient = new VaultClient({
-    database: databaseService,
-    dbCollectionPrefix: 'vault-client',
-    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
-    contractAbi: oneBtcAbi,
-    eventEmitter,
-    services,
-  });
-
-  await services.vaultClient.start();
-
   services.issues = new IssueService({
     database: databaseService,
     dbCollectionPrefix: 'issues',
@@ -62,9 +53,8 @@ export const InitVault = async (): Promise<IServices> => {
     methodName: 'issueRequests',
     idEventKey: 'issueId',
     listenTxs: true,
+    services,
   });
-
-  await services.issues.start();
 
   services.redeems = new IssueService({
     database: databaseService,
@@ -76,9 +66,8 @@ export const InitVault = async (): Promise<IServices> => {
     methodName: 'redeemRequests',
     idEventKey: 'redeemId',
     listenTxs: true,
+    services,
   });
-
-  await services.redeems.start();
 
   services.onebtcEvents = new LogEvents({
     database: databaseService,
@@ -89,6 +78,28 @@ export const InitVault = async (): Promise<IServices> => {
   });
 
   await services.onebtcEvents.start();
+
+  services.wrongPayment = new WrongPaymentMonitor({
+    dbCollectionName: 'check-txs',
+    eventEmitter,
+    database: services.database,
+    services,
+  });
+
+  await services.wrongPayment.start();
+
+  services.vaultClient = new VaultClient({
+    database: databaseService,
+    dbCollectionPrefix: 'vault-client',
+    contractAddress: process.env.HMY_ONE_BTC_CONTRACT,
+    contractAbi: oneBtcAbi,
+    eventEmitter,
+    services,
+  });
+
+  await services.vaultClient.start();
+  await services.issues.start();
+  await services.redeems.start();
 
   return services;
 };

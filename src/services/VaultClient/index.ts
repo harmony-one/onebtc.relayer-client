@@ -15,9 +15,9 @@ import logger from '../../logger';
 import { bn } from '../../utils';
 import { Buffer } from 'buffer';
 import axios from 'axios';
-import {checkAndInitDbPrivateKeys} from "./load-keys/database";
-import {loadKey, WALLET_TYPE} from "./load-keys";
-import { createError } from "../../routes/helpers";
+import { checkAndInitDbPrivateKeys } from './load-keys/database';
+import { loadKey, WALLET_TYPE } from './load-keys';
+import { createError } from '../../routes/helpers';
 
 const bitcoin = require('bitcoinjs-lib');
 
@@ -28,10 +28,22 @@ export interface IVaultClient extends ILogEventsService {
   services: IServices;
 }
 
+export interface IVault {
+  btcPublicKeyX: string;
+  btcPublicKeyY: string;
+  collateral: string;
+  issued: string;
+  toBeIssued: string;
+  toBeRedeemed: string;
+  replaceCollateral: string;
+  toBeReplaced: string;
+}
+
 enum RELAYER_STATUS {
   STOPPED = 'STOPPED',
   LAUNCHED = 'LAUNCHED',
   PAUSED = 'PAUSED',
+  ERROR = 'ERROR',
 }
 
 export class VaultClient extends DataLayerService<IOperationInitParams> {
@@ -47,6 +59,8 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   walletBTC: WalletBTC;
 
   status = RELAYER_STATUS.STOPPED;
+
+  errorText = '';
 
   constructor(params: IVaultClient) {
     super(params);
@@ -93,10 +107,17 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
       await this.walletBTC.init(btcPrivateKey);
 
+      this.status = RELAYER_STATUS.LAUNCHED;
+
+      // additional check for BTC PK
+      const vault = await this.hmyContractManager.getVaultInfo();
+
+      if (!!vault && !this.checkBTCKey(vault)) {
+        throw new Error('BTC private key does not match registered public address');
+      }
+
       this.eventEmitter.on(`ADD_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
       this.eventEmitter.on(`UPDATE_${CONTRACT_EVENT.RedeemRequest}`, this.addRedeem);
-
-      this.status = RELAYER_STATUS.LAUNCHED;
 
       setInterval(this.pingDashboard, 30000);
 
@@ -106,6 +127,8 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     } catch (e) {
       log.error(`Start Vault Client - failed`, { error: e });
       // throw new Error(`Start Vault Client: ${e.message}`);
+      this.errorText = e && e.message;
+      this.status = RELAYER_STATUS.ERROR;
     }
   }
 
@@ -118,7 +141,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   };
 
   saveOperationToDB = async (operation: Operation) => {
-    return await this.updateOrCreateData(operation.toObject({ payload: true }));
+    await this.updateOrCreateData(operation.toObject({ payload: true }));
   };
 
   loadOperationsFromDB = async () => {
@@ -145,17 +168,75 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
         params,
         this.saveOperationToDB,
         this.walletBTC,
-        this.hmyContractManager
+        this.hmyContractManager,
+        this.checkRedeemStatus
       );
 
       this.operations.push(operation);
     });
   };
 
+  checkRedeemStatus = async (redeemId: string) => {
+    const redeem = await this.services.redeems.getIssueFromChain(redeemId);
+
+    if (!redeem) {
+      log.error('checkRedeemStatus', {
+        error: 'Redeem not found',
+        redeem,
+        redeemId,
+      });
+
+      throw new Error('Redeem not found');
+    }
+
+    if (!this.isCorrectVault(redeem.vault)) {
+      log.error('checkRedeemStatus', {
+        error: `Incorrect redeem vault ${redeem.vault}`,
+        redeem,
+        redeemId,
+      });
+
+      throw new Error(`Incorrect redeem vault ${redeem.vault}`);
+    }
+
+    if (redeem.status !== '1') {
+      log.error('checkRedeemStatus', {
+        error: `Incorrect redeem status ${redeem.status}`,
+        redeem,
+        redeemId,
+      });
+
+      // throw new Error(`Incorrect redeem status ${redeem.status}`);
+    }
+
+    return Number(redeem.status);
+  };
+
+  cancelOperation = async (id: string) => {
+    // search in db
+    const operationObj: any = await this.find(id);
+
+    if (!operationObj) {
+      throw new Error('Operation not found');
+    }
+
+    // remove operation from active pull
+    this.operations = this.operations.filter(o => o.id !== id);
+
+    operationObj.status = STATUS.CANCELED;
+    operationObj.actions = operationObj.actions.map(a => ({
+      ...a,
+      status: STATUS.WAITING,
+      error: '',
+    }));
+
+    return await this.updateOrCreateData(operationObj);
+  };
+
   resetOperation = async (id: string) => {
     const operation = this.operations.find(o => o.id === id);
 
-    if (operation && operation.status === STATUS.ERROR) {
+    if (operation) {
       const newOperationObj: any = operation.toObject({ payload: true });
 
       newOperationObj.status = STATUS.IN_PROGRESS;
@@ -178,9 +259,10 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
         },
         this.saveOperationToDB,
         this.walletBTC,
-        this.hmyContractManager
+        this.hmyContractManager,
+        this.checkRedeemStatus
       );
-  
+
       await this.saveOperationToDB(newOperation);
 
       this.operations.push(newOperation);
@@ -212,7 +294,8 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
       },
       this.saveOperationToDB,
       this.walletBTC,
-      this.hmyContractManager
+      this.hmyContractManager,
+      this.checkRedeemStatus
     );
 
     await this.saveOperationToDB(operation);
@@ -235,7 +318,30 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
     }
   };
 
+  checkBTCKey = (vault: IVault) => {
+    if (!vault) {
+      return false;
+    }
+
+    const vaultEcPair = bitcoin.ECPair.fromPrivateKey(
+      Buffer.from(this.walletBTC.btcPrivateKey, 'hex'),
+      { compressed: false }
+    );
+
+    const pubX = bn(vaultEcPair.publicKey.slice(1, 33));
+    const pubY = bn(vaultEcPair.publicKey.slice(33, 65));
+
+    return String(pubX) === vault.btcPublicKeyX && String(pubY) === vault.btcPublicKeyY;
+  };
+
   info = async () => {
+    if (this.status !== RELAYER_STATUS.LAUNCHED) {
+      return {
+        status: this.status,
+        error: this.errorText,
+      };
+    }
+
     const operations = await this.getInfo();
 
     const eventsInfo = await this.services.onebtcEvents.getInfo();
@@ -243,17 +349,18 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
     const vault = await this.hmyContractManager.getVaultInfo();
 
-    const balances = await this.walletBTC.getBalances();
+    // const balances = await this.walletBTC.getBalances();
 
     return {
       synchronized,
       syncProgress: eventsInfo.progress,
       registered: !!vault,
       status: this.status,
+      error: this.errorText,
       vaultAddress: this.hmyContractManager.masterAddress,
       vaultInfo: vault,
       contract: this.contractAddress,
-      balances,
+      // balances,
       operations,
       relayer: {
         isRelayerSynced: this.services.relayerClient.isSynced(),
@@ -280,14 +387,16 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
   pingDashboard = async () => {
     try {
       const operations = await this.getInfo();
-      
-      const failedOperations = await this.getData({ filter: { status: 'error' } });
+
+      const failedOperations = await this.getData({
+        filter: { status: 'error' },
+      });
 
       const eventsInfo = await this.services.onebtcEvents.getInfo();
       const synchronized = parseInt(eventsInfo.progress) === 1;
 
       const info = {
-        version: "0.0.8",
+        version: '0.0.12',
         synchronized,
         syncProgress: eventsInfo.progress,
         status: this.status,
@@ -299,7 +408,7 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
 
       await axios.post(`${process.env.DASHBOARD_URL}/monitor/ping`, {
         vault: this.hmyContractManager.masterAddress,
-        info
+        info,
       });
     } catch (e) {
       log.error('Error ping dashboard', { error: e });

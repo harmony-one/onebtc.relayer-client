@@ -9,14 +9,14 @@ const hash256 = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/hash256');
 const assert = require('@summa-tx/bitcoin-spv-js-clients/lib/vendor/bsert');
 
 import fetch from 'node-fetch';
-const Progress = require('node-fetch-progress')
+const Progress = require('node-fetch-progress');
 
 import logger from '../logger';
 import { Buffer } from 'buffer';
 import BN from 'bn.js';
 const log = logger.module('BTC-RPC:main');
 
-export const getBlockByHeight = async (height) => {
+export const getBlockByHeight = async height => {
   const response = await axios.get(`${process.env.BTC_NODE_URL}/header/${height}`);
 
   const block = new bitcoin.Block();
@@ -38,8 +38,8 @@ export const getFullBlockByHeight = async (height): Promise<any> => {
   const response = await fetch(`${process.env.BTC_NODE_URL}/block/${height}`);
 
   const progress = new Progress(response, { throttle: 100 });
-  
-  progress.on('progress', (p) => {
+
+  progress.on('progress', p => {
     // console.log(
     //   p.total,
     //   p.done,
@@ -55,7 +55,6 @@ export const getFullBlockByHeight = async (height): Promise<any> => {
     //   p.etah,
     //   p.etaDate
     // )
-
     // console.log(
     //   p.totalh,
     //   p.doneh,
@@ -78,9 +77,17 @@ export const getNetworkFee = async () => {
   try {
     const res = await getTxFee();
     return Math.round(res);
-    // const res = await axios.get(`${process.env.BTC_NODE_URL}/fee`);
+  } catch (e) {
+    log.error('Error getNetworkFee', {
+      error: e,
+      url: process.env.BTC_NODE_URL,
+    });
+  }
+};
 
-    // return Number(res.data.rate);
+export const getNetworkFeeSatoshiPerByte = async () => {
+  try {
+    return await getTxFeeSatoshiPerByte();
   } catch (e) {
     log.error('Error getNetworkFee', {
       error: e,
@@ -91,15 +98,31 @@ export const getNetworkFee = async () => {
 
 export const getTxsByAddress = async (bech32Address: string) => {
   try {
-    const response = await axios.get(`${process.env.BTC_NODE_URL}/tx/address/${bech32Address}`);
+    let data = [];
+    let requestLength = -1;
+    let lastTxId = '';
 
-    return response.data;
+    while (requestLength < 0 || requestLength === 100) {
+      const response = await axios.get(
+        `${process.env.BTC_NODE_URL}/tx/address/${bech32Address}?limit=100&after=${lastTxId}`
+      );
+
+      requestLength = response.data.length;
+
+      if (requestLength) {
+        lastTxId = response.data[requestLength - 1].hash;
+        data = data.concat(response.data);
+      }
+    }
+
+    return data;
   } catch (e) {
     log.error('Error getTransactionByAddress', {
       error: e,
       bech32Address,
       url: process.env.BTC_NODE_URL,
     });
+    return [];
   }
 };
 
@@ -220,3 +243,17 @@ export const getTxFee = async () => {
   const fee = response.data.estimates[30].total.p2pkh.satoshi;
   return Math.round(fee);
 };
+
+export const getTxFeeSatoshiPerByte = async () => {
+  const response = await axios.get('https://bitcoiner.live/api/fees/estimates/latest');
+  const sat_per_vbyte = response.data.estimates[30].sat_per_vbyte;
+  return Number(sat_per_vbyte);
+};
+
+export function hexToBytes(hex: string) {
+  for (var bytes = [], c = 0; c < hex.length; c += 2) {
+    bytes.push(parseInt(hex.substr(c, 2), 16));
+  }
+
+  return bytes;
+}

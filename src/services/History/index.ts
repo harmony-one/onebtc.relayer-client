@@ -133,7 +133,7 @@ export class HistoryService extends DataLayerService<any> {
 
       const collection = `${this.dbCollectionPrefix}_vaults`;
       const date = new Date().toISOString().split(':')[0] + ':00:00Z';
-      const totalCollateral = vaults.reduce((acc, v) => acc + Number(v.collateral), 0);
+      const totalCollateral = vaults.reduce((acc, v) => acc + (Number(v.collateral || 0) || 0), 0);
 
       await this.database.update(
         collection,

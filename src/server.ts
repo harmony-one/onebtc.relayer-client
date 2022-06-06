@@ -1,7 +1,7 @@
 'use strict';
-import { InitSecurity } from './services/init_security';
-
 require('../env');
+
+import { InitSecurity } from './services/init_security';
 
 import express from 'express';
 import cors from 'cors';
@@ -32,7 +32,7 @@ const startServer = async () => {
       services = await InitSecurity();
       break;
     default:
-      services = await InitServices();
+      services = await InitVault();
       break;
   }
 

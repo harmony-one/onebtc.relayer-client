@@ -8,8 +8,10 @@ const SENTRY_LEVEL_MAP = {
   fatal: 'error',
 };
 
-if (process.env.SENTRY_DSN_TOKEN) {
-  Sentry.init({ dsn: process.env.SENTRY_DSN_TOKEN });
+const SENTRY_DSN_TOKEN = process.env.SENTRY_DSN_TOKEN_N || process.env.SENTRY_DSN_TOKEN;
+
+if (SENTRY_DSN_TOKEN) {
+  Sentry.init({ dsn: SENTRY_DSN_TOKEN });
 }
 
 const sentryHandler = logMessage => {
