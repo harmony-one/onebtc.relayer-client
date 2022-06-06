@@ -329,7 +329,7 @@ export const routes = (app, services: IServices) => {
         {
           size,
           page,
-          sort: { dateTimestamp: -1 },
+          sort: collection === 'vaults' ? { date: -1 } : { dateTimestamp: -1 },
           collectionName,
         },
         step
