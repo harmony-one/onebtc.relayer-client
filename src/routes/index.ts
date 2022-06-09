@@ -1,7 +1,7 @@
 import { asyncHandler, parseSort, strToBoolean } from './helpers';
 import { IServices } from '../services/init';
 import { OPERATION_TYPE } from '../services/VaultClient/interfaces';
-import { getTxsByAddress } from '../bitcoin/rpc';
+import { getTxByParams, getTxsByAddress } from '../bitcoin/rpc';
 
 export enum MANAGER_ACTION {
   RESET = 'reset',
@@ -332,7 +332,7 @@ export const routes = (app, services: IServices) => {
           sort: collection === 'vaults' ? { date: -1 } : { dateTimestamp: -1 },
           collectionName,
         },
-        step
+        collection === 'vaults' ? 'd' : step
       );
 
       res.send(data);
