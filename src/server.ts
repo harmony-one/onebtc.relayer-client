@@ -32,7 +32,7 @@ const startServer = async () => {
       services = await InitSecurity();
       break;
     default:
-      services = await InitServices();
+      services = await InitVault();
       break;
   }
 
