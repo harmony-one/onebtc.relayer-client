@@ -87,7 +87,7 @@ export class WalletBTC {
   ignoreIssuesList = [
     '403457160729548939033534475047079399793301172341154297055586226316249410827',
     '93300159680157977562922029065933448796220752306205143836524272577377336881',
-    '432968676013833082389114029011269554947008679448458449350886849412480495369'
+    '432968676013833082389114029011269554947008679448458449350886849412480495369',
   ];
 
   getOutputsByAmount = async (amount: number, vaultId: string) => {
@@ -323,12 +323,19 @@ export class WalletBTC {
       throw new Error('Error to send broadcast');
     }
 
-    await sleep(2000);
+    let count = 10;
+    let tx;
 
-    const tx = await searchTxByHex({
-      bech32Address: freeOutputs[0].bech32Address,
-      txHex: transactionHex,
-    });
+    while (!tx && count > 0) {
+      await sleep(5000);
+
+      tx = await searchTxByHex({
+        bech32Address: freeOutputs[0].bech32Address,
+        txHex: transactionHex,
+      });
+
+      count--;
+    }
 
     if (!tx) {
       return {
