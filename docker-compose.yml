@@ -24,7 +24,7 @@ services:
       UI_PORT: "3000"
       MODE: 'vault'
       BTC_NODE_URL: "https://btc.main.hmny.io"
-      HMY_NODE_URL: "https://api.harmony.one"
+      HMY_NODE_URL: "https://btc.api.s0.t.hmny.io"
       DASHBOARD_URL: "https://dashboard.btc.main.hmny.io"
       DATABASE_URL: "mongodb://mongo-service:27017/MyDb"
       DATABASE_NAME: "onebtc"
