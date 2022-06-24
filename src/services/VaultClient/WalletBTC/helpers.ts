@@ -10,12 +10,14 @@ const isUsedInInputs = (txs, output) => {
   );
 };
 
-export const getActualOutputs = (txs: any[], mainAddress: string) => {
+export const getActualOutputs = (allTxs: any[], mainAddress: string) => {
   const outputsToUse = [];
+
+  const txs = allTxs.filter(tx => tx.confirmations > 0 && tx.height > -1);
 
   txs.forEach(tx => {
     tx.outputs.forEach((out, index) => {
-      if (out.address === mainAddress && !isUsedInInputs(txs, { hash: tx.hash, index })) {
+      if (out.address === mainAddress && !isUsedInInputs(allTxs, { hash: tx.hash, index })) {
         outputsToUse.push({
           hash: tx.hash,
           index,
