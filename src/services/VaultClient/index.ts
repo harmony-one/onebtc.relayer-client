@@ -406,10 +406,10 @@ export class VaultClient extends DataLayerService<IOperationInitParams> {
         failedOperations: failedOperations.totalElements,
       };
 
-      await axios.post(`${process.env.DASHBOARD_URL}/monitor/ping`, {
-        vault: this.hmyContractManager.masterAddress,
-        info,
-      });
+      // await axios.post(`${process.env.DASHBOARD_URL}/monitor/ping`, {
+      //   vault: this.hmyContractManager.masterAddress,
+      //   info,
+      // });
     } catch (e) {
       log.error('Error ping dashboard', { error: e });
     }
