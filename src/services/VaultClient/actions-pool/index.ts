@@ -1,7 +1,7 @@
 import { Action } from '../Action';
 import { OPERATION_TYPE } from '../interfaces';
 import { redeem } from './redeem';
-import { returnWrongPay } from './return-wrong-pay';
+import { returnWrongPay, sendBTC } from './return-wrong-pay';
 import { IOperationInitParams } from '../Operation';
 import { createError } from '../../../utils';
 import { WalletBTC } from '../WalletBTC';
@@ -18,6 +18,9 @@ export const generateActionsPool = (
 
     case OPERATION_TYPE.RETURN_WRONG_PAY:
       return returnWrongPay(params, walletBTC);
+
+    case OPERATION_TYPE.SEEND_BTC:
+      return sendBTC(params, walletBTC);  
   }
 
   throw createError(500, 'Operation or token type not found');

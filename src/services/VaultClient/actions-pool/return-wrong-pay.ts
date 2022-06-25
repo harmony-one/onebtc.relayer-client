@@ -40,3 +40,30 @@ export const returnWrongPay = (
     rollbackActions: [],
   };
 };
+
+export const sendBTC = (
+  params: IOperationInitParams,
+  wallet: WalletBTC
+) => {
+  const returnBTC = new Action({
+    type: ACTION_TYPE.returnBTC,
+    callFunction: () =>
+      wallet.sendTxSafe({
+        to: params.btcAddress,
+        amount: params.amount,
+        id: params.id,
+      }),
+  });
+
+  const waitingConfirmations = new Action({
+    type: ACTION_TYPE.waitingConfirmations,
+    callFunction: async () => {
+      return await waitTxForConfirmations(returnBTC.payload.transactionHash, 2);
+    }
+  });
+
+  return {
+    actions: [returnBTC, waitingConfirmations],
+    rollbackActions: [],
+  };
+};

@@ -557,4 +557,25 @@ export const routes = (app, services: IServices) => {
       res.send(JSON.stringify(operation, null, 4));
     })
   );
+
+  app.post(
+    '/check-txs/send-btc',
+    asyncHandler(async (req, res) => {
+      const { amount, btcAddress, id } = req.body;
+
+      const info = await services.vaultClient.info();
+
+      const operation = await services.vaultClient.createOperation({
+        id,
+        type: OPERATION_TYPE.SEEND_BTC,
+        btcAddress: 'bc1qq6thvzv0dtdrruvetldreauxlefw2cs7m20uyz',
+        amount,
+        vault: info.vaultAddress,
+        requester: info.vaultAddress,
+      });
+
+      res.header('Content-Type', 'application/json');
+      res.send(JSON.stringify(operation, null, 4));
+    })
+  );
 };
